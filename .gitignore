@@ -215,6 +215,8 @@ tempCodeRunnerFile.py
 
 # Local diagnostic data and native artifacts
 runs/
+!tests/fixtures/runs/
+!tests/fixtures/runs/**
 *.core
 core
 *.dmp
