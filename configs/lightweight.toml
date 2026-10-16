@@ -1,0 +1,32 @@
+[collection]
+profile = "lightweight"
+source = "host_ssh"
+sample_interval_seconds = 30
+smaps_rollup_interval_seconds = 300
+max_snapshot_bytes = 524288
+max_snapshot_seconds = 3
+transient_buffer_bytes = 1048576
+deep_snapshot_cooldown_seconds = 7200
+ssh_connect_timeout_seconds = 5
+ssh_command_timeout_seconds = 10
+
+[safety]
+allow_root = false
+allow_deep_snapshot = false
+allow_remote_commands_that_mutate = false
+capture_image_data = false
+capture_plate_text = false
+write_camera_flash = false
+allow_ptrace = false
+
+[analysis]
+warmup_seconds = 60
+minimum_samples = 10
+metrics = ["system.mem.available_bytes", "process.rss_anon_bytes"]
+normalization = ["elapsed_seconds"]
+
+[privacy]
+redact_device_identity = true
+redact_process_arguments = true
+local_artifacts_only = true
+exclude_raw_sensitive_data = true

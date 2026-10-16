@@ -24,6 +24,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.egg-info/
 MANIFEST
 
 # PyInstaller
@@ -151,6 +152,10 @@ activemq-data/
 
 # Environments
 .env
+.env.*
+!.env.example
+*.pem
+*.key
 .envrc
 .venv
 env/
@@ -207,6 +212,14 @@ tempCodeRunnerFile.py
 
 # Ruff stuff:
 .ruff_cache/
+
+# Local diagnostic data and native artifacts
+runs/
+*.core
+core
+*.dmp
+*.sym
+build/
 
 # PyPI configuration file
 .pypirc

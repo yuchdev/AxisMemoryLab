@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "record_type": "sample",
+  "run_id": "00000000-0000-4000-8000-000000000001",
+  "producer": "synthetic-fixture",
+  "ts_utc_ns": 1767225615000000000,
+  "ts_mono_ns": 16000000000,
+  "identity": {"device_id": "synthetic-device-001"},
+  "metrics": {"process.pss_bytes": {"available": false}}
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "axis-memory-lab:run-manifest-v1",
+  "title": "Axis Memory Lab preliminary run manifest v1",
+  "type": "object",
+  "required": ["schema_version", "run_id", "created_at", "device_identity", "scenario", "privacy_classification", "status"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run_id": {"type": "string", "format": "uuid"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "device_identity": {"type": "string", "minLength": 1, "description": "Synthetic pseudonymous identity only in fixtures."},
+    "scenario": {"type": "string", "minLength": 1},
+    "privacy_classification": {"enum": ["synthetic", "redacted", "sensitive"]},
+    "status": {"enum": ["started", "complete", "incomplete", "failed"]},
+    "software_version": {"type": "string", "minLength": 1},
+    "firmware_version": {"type": "string", "minLength": 1},
+    "build_id": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false
+}
