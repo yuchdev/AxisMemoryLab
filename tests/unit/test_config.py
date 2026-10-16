@@ -83,3 +83,16 @@ def test_cli_reports_missing_file_with_io_exit_code(
 
     assert main(["config", "check", "--file", str(ROOT / "configs/not-present.toml")]) == 4
     assert "cannot read configuration file" in capsys.readouterr().err
+
+
+def test_abort_threshold_must_be_below_trigger_threshold(tmp_path: Path) -> None:
+    source = (ROOT / "configs/default.toml").read_text()
+    path = tmp_path / "bad.toml"
+    path.write_text(
+        source.replace(
+            "abort_mem_available_below_bytes = 16777216",
+            "abort_mem_available_below_bytes = 33554432",
+        )
+    )
+    with pytest.raises(ConfigError, match="abort_mem_available_below_bytes must be less"):
+        load_config(path)

@@ -16,6 +16,9 @@ _COLLECTION_POSITIVE = {
     "max_snapshot_seconds",
     "transient_buffer_bytes",
     "deep_snapshot_cooldown_seconds",
+    "trigger_pss_growth_bytes",
+    "trigger_mem_available_below_bytes",
+    "abort_mem_available_below_bytes",
     "ssh_connect_timeout_seconds",
     "ssh_command_timeout_seconds",
 }
@@ -95,6 +98,14 @@ def load_config(path: str | Path) -> dict[str, Any]:
         raise ConfigError(
             f"{config_path}: [collection].transient_buffer_bytes must be at least "
             "[collection].max_snapshot_bytes"
+        )
+    if (
+        collection["abort_mem_available_below_bytes"]
+        >= collection["trigger_mem_available_below_bytes"]
+    ):
+        raise ConfigError(
+            f"{config_path}: [collection].abort_mem_available_below_bytes must be less than "
+            "[collection].trigger_mem_available_below_bytes"
         )
 
     for field in _SAFETY_FLAGS:

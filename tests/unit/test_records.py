@@ -108,3 +108,23 @@ def test_byte_metrics_require_bytes_unit() -> None:
         list(error.absolute_path) == ["metrics", "process.rss_anon_bytes", "unit"]
         for error in validator.iter_errors(record)
     )
+
+
+def test_manifest_accepts_device_and_workload_facts() -> None:
+    manifest = json.loads((RUN / "manifest.json").read_text())
+    manifest.update(
+        {
+            "camera_model": "synthetic-model",
+            "soc": "synthetic-soc",
+            "sdk_generation": "synthetic-sdk",
+            "libc": "synthetic-libc",
+            "test_case_id": "T2",
+            "workload": {"resolution": "1920x1080", "fps": 15, "codec": "h264"},
+        }
+    )
+    validator = _validator("run-manifest-v1.schema.json")
+    assert not list(validator.iter_errors(manifest))
+    manifest["workload"]["fps"] = 0
+    assert list(validator.iter_errors(manifest))
+    manifest["workload"] = {"unknown": 1}
+    assert list(validator.iter_errors(manifest))

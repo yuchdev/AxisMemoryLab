@@ -12,14 +12,14 @@ for device profiling yet.
 
 ## Status
 
-| Milestone | Scope | Status |
-| --- | --- | --- |
-| 0000 | Safe scaffold, schemas, CLI contract, disabled native API | Scaffolded; gates must pass |
-| 0001 | Discovery, protocol refinement, safe collection | Planned |
-| 0002 | Trend analysis and reports | Planned |
-| 0003 | In-application profiling | Planned |
-| 0004 | Allocation samples and symbolization | Planned |
-| 0005 | Advanced AXIS diagnostics | Planned |
+| Milestone | Scope                                                     | Status                      |
+|-----------|-----------------------------------------------------------|-----------------------------|
+| 0000      | Safe scaffold, schemas, CLI contract, disabled native API | Scaffolded; gates must pass |
+| 0001      | Discovery, protocol refinement, safe collection           | Planned                     | 
+| 0002      | Trend analysis and reports                                | Planned                     |
+| 0003      | In-application profiling                                  | Planned                     |
+| 0004      | Allocation samples and symbolization                      | Planned                     |
+| 0005      | Advanced AXIS diagnostics                                 | Planned                     |
 
 See [milestones](milestones/README.md), [purpose and safety](docs/00-purpose-safety.md),
 and the [bootstrap decisions](docs/decisions/0000-bootstrap.md).

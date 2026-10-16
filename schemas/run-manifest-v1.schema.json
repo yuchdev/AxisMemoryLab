@@ -14,7 +14,21 @@
     "status": {"enum": ["started", "complete", "incomplete", "failed"]},
     "software_version": {"type": "string", "minLength": 1},
     "firmware_version": {"type": "string", "minLength": 1},
-    "build_id": {"type": "string", "minLength": 1}
+    "build_id": {"type": "string", "minLength": 1},
+    "camera_model": {"type": "string", "minLength": 1},
+    "soc": {"type": "string", "minLength": 1},
+    "sdk_generation": {"type": "string", "minLength": 1},
+    "libc": {"type": "string", "minLength": 1},
+    "test_case_id": {"type": "string", "minLength": 1},
+    "workload": {
+      "type": "object",
+      "properties": {
+        "resolution": {"type": "string", "minLength": 1},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "codec": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
   },
   "additionalProperties": false
 }

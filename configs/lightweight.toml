@@ -7,6 +7,9 @@ max_snapshot_bytes = 524288
 max_snapshot_seconds = 3
 transient_buffer_bytes = 1048576
 deep_snapshot_cooldown_seconds = 7200
+trigger_pss_growth_bytes = 20971520
+trigger_mem_available_below_bytes = 33554432
+abort_mem_available_below_bytes = 16777216
 ssh_connect_timeout_seconds = 5
 ssh_command_timeout_seconds = 10
 
