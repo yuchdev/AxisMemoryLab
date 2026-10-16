@@ -71,6 +71,21 @@ def test_unavailable_requires_reason() -> None:
         Metric(available=False).as_dict()
 
 
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_record_rejects_non_finite_metric_values(value: float) -> None:
+    record = Record(
+        record_type="sample",
+        run_id="00000000-0000-4000-8000-000000000001",
+        producer="synthetic-test",
+        ts_utc_ns=123,
+        ts_mono_ns=None,
+        identity={},
+        metrics={"test.metric": Metric(value=value, unit="bytes", source="synthetic")},
+    )
+    with pytest.raises(ValueError):
+        record.to_json()
+
+
 def test_boolean_is_not_accepted_as_timestamp() -> None:
     record = Record(
         record_type="sample",

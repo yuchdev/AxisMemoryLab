@@ -74,4 +74,4 @@ class Record:
         return result
 
     def to_json(self) -> str:
-        return json.dumps(self.as_dict(), sort_keys=True, separators=(",", ":"))
+        return json.dumps(self.as_dict(), sort_keys=True, separators=(",", ":"), allow_nan=False)
