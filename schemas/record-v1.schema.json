@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "axis-memory-lab:record-v1",
+  "title": "Axis Memory Lab provisional record envelope v1",
+  "type": "object",
+  "$defs": {
+    "metric": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["value", "unit", "source"],
+          "properties": {
+            "value": {"type": ["number", "string", "boolean"]},
+            "unit": {"type": "string", "minLength": 1},
+            "source": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["available", "reason"],
+          "properties": {
+            "available": {"const": false},
+            "reason": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": ["schema_version", "record_type", "run_id", "producer", "ts_utc_ns", "ts_mono_ns", "identity", "metrics"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "record_type": {"enum": ["sample", "event", "capability", "artifact", "error", "run_start", "run_stop"]},
+    "run_id": {"type": "string", "format": "uuid"},
+    "producer": {"type": "string", "minLength": 1},
+    "ts_utc_ns": {"type": "integer", "minimum": 0},
+    "ts_mono_ns": {"type": ["integer", "null"], "minimum": 0},
+    "identity": {
+      "type": "object",
+      "required": ["device_id"],
+      "properties": {
+        "device_id": {"type": "string", "minLength": 1, "description": "Pseudonymous identity; never a serial number or address."},
+        "pid": {"type": "integer", "minimum": 1},
+        "process_start_ticks": {"type": "integer", "minimum": 0},
+        "boot_id": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "propertyNames": {"pattern": "^(system|process|app)\\.[a-z0-9_.]+$"},
+      "patternProperties": {
+        "_bytes$": {
+          "allOf": [
+            {"$ref": "#/$defs/metric"},
+            {"properties": {"unit": {"const": "bytes"}}}
+          ]
+        }
+      },
+      "additionalProperties": {"$ref": "#/$defs/metric"}
+    },
+    "annotations": {"type": "object"},
+    "source_metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

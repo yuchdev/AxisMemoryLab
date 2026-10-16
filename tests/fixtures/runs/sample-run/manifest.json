@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "run_id": "00000000-0000-4000-8000-000000000001",
+  "created_at": "2026-01-01T00:00:15Z",
+  "device_identity": "synthetic-device-001",
+  "scenario": "synthetic-memory-sampling",
+  "privacy_classification": "synthetic",
+  "status": "complete",
+  "software_version": "0.0.0",
+  "firmware_version": "synthetic",
+  "build_id": "synthetic-build"
+}

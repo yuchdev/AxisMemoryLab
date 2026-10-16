@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "axis-memory-lab:report-v1",
+  "title": "Axis Memory Lab future report envelope v1",
+  "type": "object",
+  "required": ["schema_version", "run_references", "generated_at", "limitations", "findings"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run_references": {"type": "array", "items": {"type": "string", "format": "uuid"}, "minItems": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "findings": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": false
+}

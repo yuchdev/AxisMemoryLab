@@ -1,0 +1,31 @@
+name: Native disabled API
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure GCC
+        if: matrix.compiler == 'gcc'
+        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug -DAXMEM_DISABLED=ON
+      - name: Configure Clang
+        if: matrix.compiler == 'clang'
+        env:
+          CC: clang
+          CXX: clang++
+        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug -DAXMEM_DISABLED=ON
+      - run: cmake --build build/native --parallel
+      - run: ctest --test-dir build/native --output-on-failure
