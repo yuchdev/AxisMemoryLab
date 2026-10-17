@@ -65,7 +65,7 @@ def test_live_samples_parse_and_validate(tmp_path: Path) -> None:
     assert len(samples) == 2
     metrics = samples[0]["metrics"]
 
-    # Real kernel text must parse: a parse_error here means a format this repository mis-reads.
+    # Real kernel text must parse: a parse_error here means a format this repository misreads.
     bad = {
         n: m
         for s in samples
