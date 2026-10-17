@@ -9,6 +9,12 @@
 #include "check.hpp"
 #include "sampler_util.hpp"
 
+// The hook defines these even when <new> hides them (Clang without -fsized-deallocation).
+void operator delete(void *, std::size_t) noexcept;
+void operator delete[](void *, std::size_t) noexcept;
+void operator delete(void *, std::size_t, std::align_val_t) noexcept;
+void operator delete[](void *, std::size_t, std::align_val_t) noexcept;
+
 namespace {
 
 int g_handler_calls = 0;
@@ -157,6 +163,15 @@ int main() {
   s = get_stats();
   CHECK(s.live_samples == 0 && s.frees_matched == 55);
   CHECK(s.dropped_ring_full == 0 && s.dropped_table_full == 0);
+
+  // Explicitly exercise the remaining sized array and aligned delete overloads.
+  ::operator delete[](::operator new[](256), std::size_t{256});
+  ::operator delete(::operator new(256, std::align_val_t(64)), std::size_t{256},
+                    std::align_val_t(64));
+  ::operator delete[](::operator new[](256, std::align_val_t(64)), std::size_t{256},
+                      std::align_val_t(64));
+  s = get_stats();
+  CHECK(s.samples_taken == 58 && s.live_samples == 0 && s.frees_matched == 58);
 
   // A pointer from before sampling started is just counted when freed.
   axmem_sampler_stop();
