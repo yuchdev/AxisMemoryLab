@@ -15,6 +15,7 @@ from axis_memlab.analysis.compare import compare_runs
 from axis_memlab.analysis.engine import analyze_run, build_report
 from axis_memlab.analysis.load import load_run
 from axis_memlab.analysis.settings import AnalysisSettings
+from axis_memlab.cli_device import DEVICE_COMMANDS, add_device_commands, run_device_command
 from axis_memlab.config import load_config
 from axis_memlab.errors import ConfigError, RunDataError
 from axis_memlab.reporting import load_report
@@ -23,11 +24,6 @@ from axis_memlab.reporting.html import render_html
 from axis_memlab.reporting.markdown import render_markdown
 
 _PLANNED = {
-    "discover": "0001",
-    "collect": "0001",
-    "annotate": "0001",
-    "snapshot": "0001",
-    "import": "0001",
     "symbolize": "0004",
 }
 
@@ -62,6 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--input", required=True, type=Path, help="report JSON from analyze")
     report.add_argument("--format", required=True, choices=("markdown", "html", "csv"))
     report.add_argument("--out", type=Path, help="write here (must not exist) instead of stdout")
+    add_device_commands(commands)
     for name, milestone in _PLANNED.items():
         planned = commands.add_parser(name, help=f"planned for milestone {milestone}")
         planned.description = (
@@ -129,6 +126,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 4
         print(f"axis-memlab: configuration is valid: {args.file}")
         return 0
+    if args.command in DEVICE_COMMANDS:
+        return run_device_command(args)
     if args.command in ("analyze", "compare", "report"):
         try:
             text = _run_analysis_command(args)

@@ -21,7 +21,10 @@
           "required": ["available", "reason"],
           "properties": {
             "available": {"const": false},
-            "reason": {"type": "string", "minLength": 1}
+            "reason": {"type": "string", "minLength": 1},
+            "reason_code": {
+              "enum": ["missing", "permission_denied", "timeout", "parse_error", "unsupported", "not_collected"]
+            }
           },
           "additionalProperties": false
         }
@@ -49,7 +52,7 @@
     },
     "metrics": {
       "type": "object",
-      "propertyNames": {"pattern": "^(system|process|app)\\.[a-z0-9_.]+$"},
+      "propertyNames": {"pattern": "^(system|process|app|collector)\\.[a-z0-9_.]+$"},
       "patternProperties": {
         "_bytes$": {
           "allOf": [
@@ -63,5 +66,52 @@
     "annotations": {"type": "object"},
     "source_metadata": {"type": "object"}
   },
+  "allOf": [
+    {
+      "if": {"properties": {"record_type": {"const": "capability"}}, "required": ["record_type"]},
+      "then": {
+        "required": ["annotations"],
+        "properties": {
+          "annotations": {
+            "type": "object",
+            "required": ["capability", "state"],
+            "properties": {
+              "capability": {"type": "string", "minLength": 1},
+              "state": {"enum": ["available", "denied", "missing", "timeout", "unsupported", "unknown"]},
+              "reason": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_type": {"const": "error"}}, "required": ["record_type"]},
+      "then": {
+        "required": ["annotations"],
+        "properties": {
+          "annotations": {
+            "type": "object",
+            "required": ["source", "reason_code"],
+            "properties": {
+              "source": {"type": "string", "minLength": 1},
+              "reason_code": {
+                "enum": ["missing", "permission_denied", "timeout", "parse_error", "unsupported", "not_collected"]
+              },
+              "detail": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"record_type": {"const": "event"}}, "required": ["record_type"]},
+      "then": {
+        "required": ["annotations"],
+        "properties": {
+          "annotations": {"type": "object", "required": ["event"], "properties": {"event": {"type": "string", "minLength": 1}}}
+        }
+      }
+    }
+  ],
   "additionalProperties": false
 }

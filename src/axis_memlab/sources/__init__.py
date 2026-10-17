@@ -1,1 +1,1 @@
-"""M0001 owns source parsing; no metric source is implemented in M0000."""
+"""Pure parsers that turn procfs/cgroupfs text into typed metrics; no I/O happens here."""

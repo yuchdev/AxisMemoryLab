@@ -1,10 +1,10 @@
 # Axis Memory Lab
 
-**This repository does not yet profile an AXIS camera or collect device data
-from the host.** Offline analysis (milestone 0002) and an in-application probe
-(milestone 0003) exist and are tested on synthetic data only; host collection
-(milestone 0001) is not implemented. No camera, Axis SDK, SSH connection, root
-account, or surveillance material is needed or used.
+**Nothing in this repository has been run against a real AXIS camera.** Host
+collection (milestone 0001), offline analysis (0002), and an in-application probe
+(0003) are implemented and tested on synthetic data and fixtures only. Running them
+against a device needs the external requirements listed below and an explicitly
+authorized device. No Axis SDK, root account, or surveillance material is needed.
 
 Axis Memory Lab is intended to help investigate memory behavior in applications
 running under AXIS OS. It has two deliberately separate surfaces: an optional,
@@ -16,7 +16,7 @@ collection and offline analysis. Neither has been run on a camera yet.
 | Milestone | Scope                                                     | Status                      |
 |-----------|-----------------------------------------------------------|-----------------------------|
 | 0000      | Safe scaffold, schemas, CLI contract, disabled native API | Scaffolded; gates must pass |
-| 0001      | Discovery, protocol refinement, safe collection           | Planned (not implemented)   |
+| 0001      | Discovery, protocol refinement, safe collection           | Implemented; fixture only   |
 | 0002      | Trend analysis and reports                                | Implemented; synthetic only |
 | 0003      | In-application profiling                                  | Implemented; host-tested    |
 | 0004      | Allocation samples and symbolization                      | Planned                     |
@@ -39,14 +39,58 @@ axis-memlab --version
 axis-memlab config check --file configs/default.toml
 ```
 
-The CLI works on local files only: `config check`, `analyze`, `compare`, and
-`report`. Planned commands such as `collect` display their milestone and exit
-without doing work.
+Commands: `config check`, `discover`, `collect`, `annotate`, `snapshot`, `import`,
+`purge` (milestone 0001), and `analyze`, `compare`, `report` (milestone 0002).
+`symbolize` is planned and exits with status 3. Everything that touches a device is
+read-only and opt-in; the runbook is in [collecting on AXIS](docs/05-collecting-on-axis.md),
+and a no-device walk-through is in [examples/demo-run](examples/demo-run/README.md).
 
 The `lightweight` profile samples less often and caps snapshots/buffers at half
 the default profile's byte limit. `inapp-only` selects future application-owned
 counters and does not require SSH. `stress-lab` uses shorter intervals and
 larger bounded limits but does not enable intrusive operations.
+
+## External requirements
+
+What must exist outside this repository before each part can be used. Nothing below is
+installed or configured by the package itself.
+
+**Always (host CLI, analysis, reports, offline demo)**
+
+| Requirement | Detail |
+| --- | --- |
+| Python | 3.11 or newer; no runtime dependencies (standard library only) |
+| `pip` | To install the package; development extras add `build`, `jsonschema`, `mypy`, `pytest`, `ruff` |
+| Operating system | Windows, macOS, or Linux for the host tools |
+
+**Reading a real device over SSH (`discover`, `collect`, `snapshot`)**
+
+| Requirement | Detail |
+| --- | --- |
+| OpenSSH client | An `ssh` executable on `PATH` (Windows: the optional "OpenSSH Client" feature; checked against OpenSSH 10.2). The tool starts it without a shell and never weakens its options |
+| Known host key | The device's host key must already be in your `known_hosts` (or a file given with `--ssh-known-hosts`), verified out of band. Connections to unknown or changed keys are refused, by design |
+| Key-based login | A non-interactive key (`--ssh-identity`); password prompts are disabled |
+| SSH enabled on the device | SSH is off by default on AXIS OS. From AXIS OS 12 it needs a non-root account with restricted privileges; Developer Mode (AXIS OS 11.11 and later) gives access as an ACAP application's user, with release-specific steps. See the [Axis documentation](https://developer.axis.com/acap/get-started/set-up-developer-environment/set-up-device-advanced/) |
+| Readable `/proc` | The account must be able to read the files in the [read-only allowlist](docs/05-collecting-on-axis.md#3-what-is-read). Missing or denied files are reported, not worked around (for example, cross-account `/proc/PID` entries may be unreadable; use the in-app probe then) |
+| A device you are allowed to measure | An approved development camera, with a consent or incident reference recorded in the manifest (`--consent-reference`). Do not use production cameras for experiments |
+| Device facts | Camera model, SoC, AXIS OS version, application build and ACAP SDK generation, entered by you (`--camera-model`, `--soc`, `--firmware-version`, ...); the tool does not guess them |
+| Local disk | Space for the run archive (`records.jsonl` grows with duration; `--compress` and `purge` help). Runs are stored locally only |
+| A pseudonym policy | `--device-id` must be a label you chose; serial numbers, MAC and IP addresses are refused |
+
+**In-application probe (`native/`)**
+
+| Requirement | Detail |
+| --- | --- |
+| CMake | 3.20 or newer |
+| C++17 compiler | GCC, Clang, or MSVC (developed with Visual Studio 2022; CI builds GCC and Clang on Linux) |
+| Threads library | `pthread` on Linux (found by CMake) |
+| Your application's build | The probe is SDK-free. To run inside an ACAP application you build it with your own toolchain and the Axis ACAP Native SDK; this repository neither includes nor requires the SDK |
+| Linux target for `/proc` metrics | On other platforms the probe still works, and process-memory metrics are reported as unavailable |
+
+**Not required today:** root access, the Axis SDK, cloud services, any network access other
+than SSH to the device, or any online symbol lookup. Later milestones will add optional
+tools (symbolizers, sanitizers, heap profilers, `gdbserver`) on a workstation or lab unit;
+none is used yet.
 
 ## Development checks
 
@@ -74,6 +118,14 @@ when the development dependencies are installed.
 What is in the repository, how to use it, and how it helps an investigation. The
 recommended order of use is in the [investigation workflow](docs/11-investigation-workflow.md).
 
+- **Host collection** (`discover`, `collect`, `annotate`, `snapshot`, `import`, `purge`;
+  [runbook](docs/05-collecting-on-axis.md))
+  - Reads an allowlisted set of `/proc` and cgroup files over SSH (one connection per
+    cycle) or from a saved tree; records what the account cannot read as explicit
+    capability states; appends to a local run archive that is never rewritten; stops on
+    memory pressure, bounds, or repeated connection failures.
+  - *Effect:* a reproducible, low-impact evidence stream with the collector's own cost and
+    errors included, and no way to run arbitrary commands on the device.
 - **Safety profiles** (`configs/*.toml`, `axis-memlab config check`)
   - Four profiles (`default`, `lightweight`, `inapp-only`, `stress-lab`) validated strictly:
     every risky flag (root, deep snapshots, mutation, ptrace, image or plate capture,
@@ -106,17 +158,19 @@ recommended order of use is in the [investigation workflow](docs/11-investigatio
 - **Roadmap and coverage** (`docs/roadmap/`)
   - Milestones 0001–0005 and a matrix tracing every tool in the tech notes to its owner.
   - *Effect:* nothing proposed is silently dropped; open items are explicit.
-- **Not yet available:** host collection and discovery (0001), differential `smaps`
-  reports (0002), device overhead measurements and real VDO/Larod adapters (0003),
-  allocation sampling and symbolization (0004), advanced AXIS diagnostics (0005).
+- **Not yet available:** deep captures (`snapshot --level deep` is refused by the safety
+  model), any measurement on a real device, differential `smaps` reports (0002), device
+  overhead numbers and real VDO/Larod adapters (0003), allocation sampling and
+  symbolization (0004), advanced AXIS diagnostics (0005).
 
 ## Limitations and safety
 
 The JSON schemas and record types are provisional scaffold contracts; M0001
 owns protocol refinement. The native probe writes only to a local size-capped
 file chosen by the application; it opens no network connection and starts no
-thread. Host collection, device discovery, symbolization, and camera integration
-are not implemented, and nothing has been measured on a camera. Do not add real credentials, customer identifiers, footage, or
+thread. The host collector is read-only, allowlisted, and bounded; it never restarts
+the application or captures `deep` data. Symbolization is not implemented, and nothing
+has been measured on a camera. Do not add real credentials, customer identifiers, footage, or
 device measurements to fixtures or issues. The defaults disable root access,
 mutations, deep snapshots, ptrace, image/plate capture, and camera-flash writes.
 
@@ -125,6 +179,7 @@ mutations, deep snapshots, ptrace, image/plate capture, and camera-flash writes.
 - [Compatibility matrix template](docs/01-axis-compatibility.md)
 - [Protocol and schemas](docs/02-protocol-and-schema.md)
 - [Metric semantics](docs/03-metrics-semantics.md)
+- [Collecting on AXIS (runbook)](docs/05-collecting-on-axis.md)
 - [Native probe integration](docs/06-integrating-cpp-probes.md)
 - [Overhead measurement](docs/10-benchmarking-overhead.md)
 - [Investigation workflow](docs/11-investigation-workflow.md)

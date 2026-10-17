@@ -1,0 +1,8 @@
+nr_free_pages 10240
+nr_slab_reclaimable 1536
+nr_slab_unreclaimable 2560
+pgfault 123456
+pgmajfault 78
+pgscan_kswapd 0
+pgscan_direct 0
+oom_kill 0

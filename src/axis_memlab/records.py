@@ -9,6 +9,16 @@ from uuid import UUID
 
 RECORD_SCHEMA = "record-v1.schema.json"
 
+# Closed set of machine-readable absence reasons (tech notes, SP section 6).
+REASON_CODES = (
+    "missing",
+    "permission_denied",
+    "timeout",
+    "parse_error",
+    "unsupported",
+    "not_collected",
+)
+
 
 @dataclass(frozen=True)
 class Metric:
@@ -19,6 +29,7 @@ class Metric:
     source: str | None = None
     available: bool = True
     reason: str | None = None
+    reason_code: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         if self.available:
@@ -29,7 +40,11 @@ class Metric:
             raise ValueError("unavailable metrics cannot include value, unit, or source")
         if not self.reason:
             raise ValueError("unavailable metrics require a reason")
-        return {"available": False, "reason": self.reason}
+        if self.reason_code is None:
+            return {"available": False, "reason": self.reason}
+        if self.reason_code not in REASON_CODES:
+            raise ValueError(f"unknown reason_code: {self.reason_code}")
+        return {"available": False, "reason": self.reason, "reason_code": self.reason_code}
 
 
 @dataclass(frozen=True)

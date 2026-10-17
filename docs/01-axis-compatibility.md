@@ -37,3 +37,22 @@ statements, not results from this repository; none changes the matrix above.
 Not verified: which `/proc`, `ptrace`, `debugfs`, `perf`, and eBPF facilities
 are blocked on a given AXIS OS 12 build. Record these per device as
 capabilities rather than assuming them.
+
+## How to record evidence (M0001)
+
+Add a row only from a real run, never from documentation or assumption.
+
+1. Run `axis-memlab discover --ssh <target> --app <name> --json` as the account you intend to
+   use, and keep the output (it contains no host name).
+2. Fill the row from the run's manifest and the discovery output:
+   - Firmware, SoC, SDK: the values you passed to `collect` (`--firmware-version`, `--soc`,
+     `--sdk-generation`).
+   - SSH/procfs access: the capability states (`available`, `denied`, `missing`, `timeout`,
+     `unsupported`) for `meminfo`, `vmstat`, `pressure_memory`, `process_status`,
+     `process_stat`, `process_smaps_rollup`, `process_fd`, `cgroup_memory`.
+   - VDO/Larod: from the application build, not from discovery.
+   - Evidence/status: the run id, date, and who authorized the test.
+3. Record limitations (account type, Developer Mode, anything denied) in the same row.
+
+Tools that discovery does not probe (`ps`, `top`, `pmap`, `journalctl`, `gdbserver`, `perf`) must
+be checked by hand and written down; the collector never executes them.

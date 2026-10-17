@@ -1,1 +1,2 @@
-"""M0001 owns telemetry transport; no telemetry client exists in M0000."""
+"""Telemetry transport is not implemented: the in-app probe writes a local file, and
+``axis-memlab import`` ingests it. A network receiver is deliberately not provided."""

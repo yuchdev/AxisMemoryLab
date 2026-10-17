@@ -41,17 +41,18 @@ escalate with a reproducible case.
 | `axis-memlab config check` | implemented (M0000) | Validate the safety profile before any run |
 | `axis-memlab analyze / compare / report` | implemented (M0002), synthetic-validated | Stages 3, 4, 7 |
 | C++ probe, `COUNTERS` and `LEDGER` modes | implemented (M0003), host-tested, **not yet run on a camera** | Stage 5 |
-| `discover`, `collect`, `annotate`, `snapshot`, `import` | **not implemented** (M0001) | Replaced by the manual capture below |
+| `discover`, `collect`, `annotate`, `snapshot`, `import`, `purge` | implemented (M0001), fixture-tested, **not yet run on a camera** | Stages 1, 2, 5 |
 | Allocation sampling, symbolization, sanitizers, heap-profiler replay | not implemented (M0004) | Stage 8 (escalation) |
 | Vendor-assisted kernel/driver inspection (`gdbserver`, `strace`, `perf`, slab/DMA-BUF), device server report | not implemented (M0005) | Stage 8 (escalation) |
 
 Every tool and technique in the tech notes has an owner; see
 `docs/roadmap/tech-notes-coverage.md`.
 
-Until M0001 exists, host-side samples are captured by hand following the first-hour
-checklist and converted to `record-v1` JSON Lines by a throwaway script (keep it out of
-the repository, or contribute it under M0001). The in-app probe writes `record-v1`
-directly, so a run archive can already be built from probe output alone.
+Host-side samples are collected with `axis-memlab collect` (runbook:
+`docs/05-collecting-on-axis.md`; external requirements in the README). The in-app probe
+writes `record-v1` directly and is brought in with `axis-memlab import`, so a run can
+combine both sources. `snapshot --level deep` and anything beyond the allowlisted reads
+remain unavailable.
 
 A run archive is a directory with `manifest.json` and `records.jsonl`
 (`docs/02-protocol-and-schema.md`). Phase markers are `event` records with

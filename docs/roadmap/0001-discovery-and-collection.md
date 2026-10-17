@@ -1,6 +1,6 @@
 # Milestone 0001 — Discovery and collection
 
-**Owner:** M0001. **Depends on:** M0000. **Status:** planned.
+**Owner:** M0001. **Depends on:** M0000. **Status:** implemented and tested on fixtures and a simulated `ssh`; device acceptance open.
 
 Refine and freeze the record protocol; discover capabilities without assuming
 firmware, permissions, or procfs availability; implement bounded, read-only
@@ -64,3 +64,49 @@ here before that review.
 
 The phase and segment event convention used by M0002 and written by the probe
 (`{"event":"phase_start","phase":...}`) is provisional until this milestone confirms it.
+
+## Delivered
+
+- Parsers (`sources/`) for `meminfo`, `vmstat`, PSI, process `status`/`stat`, `smaps_rollup`,
+  fd listings, and cgroup v1/v2, with kernel-variation tests, zero preserved, unit
+  conversion at parse time, and a closed `reason_code` set; the metric registry is in
+  `docs/03-metrics-semantics.md` and a test keeps it complete.
+- Read-only readers (`transport/`): one allowlist shared by a local reader (saved tree or live
+  host) and an SSH reader that drives the system `ssh` (host keys verified, no shell, no
+  forwarding, bounded time and size, batched reads, option-injection safe). Verified against
+  `ssh -G` for option acceptance.
+- `capability` records and discovery; append-only run store (atomic manifest, torn-line safe,
+  gzip, retention); pseudonymous identity checks; manifest fields for consent, redaction, and
+  config hash.
+- Scheduler with sparse cadence, triggers with cooldown, memory-pressure skip and abort,
+  restart/missing-process events, exponential backoff, bounded runs, and collector
+  self-metrics.
+- Commands: `discover`, `collect`, `annotate`, `snapshot --level sparse`, `import`, `purge`.
+  `snapshot --level deep` exits 3 by design.
+- Fixture-only demo: `examples/demo-run/README.md`.
+
+## Open acceptance items
+
+- No real device: compatibility evidence (`docs/01-axis-compatibility.md`), SSH overhead,
+  one hour of valid metrics from an authorized camera, and the 24-hour collector soak.
+- Not implemented: deep captures (blocked by the safety model; a separate review is needed),
+  `fdinfo` and `Private_Hugetlb`, an all-process summary, reading Axis logs (`journalctl`,
+  syslog), a separate SSH audit log, and the optional `tiny-probe`.
+- The in-app probe still writes free-text unavailable reasons without `reason_code`
+  (M0003 follow-up).
+- Reconciliation of profile names with the reference `lightweight`/`standard`/`lab` set and
+  separate deep-snapshot caps (`docs/roadmap/tech-notes-coverage.md`, section 6).
+- Frozen protocol: version 1 is used by three producers and now changes only additively; a
+  formal freeze waits for device evidence.
+
+## Stories (revised status)
+
+| Story | Status |
+| --- | --- |
+| M1-S01 compatibility matrix | procedure written; rows need device evidence |
+| M1-S02 schemas and unit semantics | done (additive v1) |
+| M1-S03 parsers | done |
+| M1-S04 SSH transport, process selection via `/proc` | done (simulated and `ssh -G`); device untested |
+| M1-S05 scheduler, bounded snapshots, append-only archive | done |
+| M1-S06 annotations, segmentation, CSV export | done |
+| M1-S07 install, security, runbook | done (`README`, `docs/05`, `docs/08`) |

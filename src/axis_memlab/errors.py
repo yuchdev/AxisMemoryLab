@@ -11,3 +11,11 @@ class FeatureUnavailableError(RuntimeError):
 
 class RunDataError(ValueError):
     """A run archive or report document is unreadable or violates its contract."""
+
+
+class TransportError(RuntimeError):
+    """The transport itself failed (for example SSH could not connect); retry with backoff."""
+
+
+class CollectionError(RuntimeError):
+    """A collection request is invalid or cannot proceed (bad selector, unsafe target)."""

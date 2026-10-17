@@ -31,3 +31,8 @@ that review.
 - The redacted escalation bundle (manifests, reports, plan, reproducer, unreadable-source
   list) is owned here with `docs/09-customer-escalation.md`; it moved from the tech
   notes' M2-S05.
+- Safety review for `deep` captures: full `/proc/PID/smaps`, full fd classification beyond
+  counts, and allocator reports. Today `allow_deep_snapshot=true` is rejected and
+  `snapshot --level deep` exits 3. Enabling them needs an explicit change to the configuration
+  safety model, a size and time budget, a refusal under memory pressure, and local-only
+  handling of mapping names and paths. M0002-S03 differential reports depend on this.

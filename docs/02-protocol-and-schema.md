@@ -32,3 +32,26 @@ markers (`annotations` `{"event":"phase_start","phase":"..."}`). Identity carrie
 `device_id`, `pid`, `process_start_ticks`, and `boot_id` when readable. Absent or
 unreadable values are `{available:false, reason}`, never zero. See
 `docs/06-integrating-cpp-probes.md` for the metric names.
+
+## Contract additions in M0001
+
+- **Reason codes.** An unavailable metric may carry `reason_code`, one of `missing`,
+  `permission_denied`, `timeout`, `parse_error`, `unsupported`, `not_collected`, next to the
+  free-text `reason`. The host collector always sets it; the in-app probe still writes
+  free text only.
+- **Namespaces.** Metric names start with `system.`, `process.`, `app.`, or `collector.`
+  (the collector's own cost and errors).
+- **Record shapes** (enforced by the schema):
+  `capability` needs `annotations.capability` and `annotations.state` (`available`,
+  `denied`, `missing`, `timeout`, `unsupported`, `unknown`);
+  `error` needs `annotations.source` and `annotations.reason_code`;
+  `event` needs `annotations.event`. Events in use: `phase_start` (`phase`),
+  `segment_boundary` (`reason`), `trigger_fired`, `sparse_skipped`, `source_recovered`,
+  `process_restart`, `process_missing`, `snapshot`, `abort_memory_pressure`. `run_start` and
+  `run_stop` bracket a collection (`run_stop` carries `status` and `reason`).
+- **Identity.** `device_id` is a pseudonym; `boot_id`, `pid`, and `process_start_ticks`
+  identify a process instance and drive segmentation.
+- **Manifest** gains `consent_reference`, `redaction_status`, `config_sha256`, and
+  `collector_version`. The manifest `status` is the only field that changes after creation.
+- **Freezing.** Schema version 1 is now used by three producers (collector, probe,
+  importer). Changes are additive; a breaking change needs `schema_version` 2.

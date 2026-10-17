@@ -1,0 +1,13 @@
+Name:	synthetic_app
+Umask:	0022
+State:	S (sleeping)
+Tgid:	4242
+Pid:	4242
+VmPeak:	  120000 kB
+VmSize:	  118784 kB
+VmRSS:	   40960 kB
+RssAnon:	   30720 kB
+RssFile:	    9216 kB
+RssShmem:	    1024 kB
+VmSwap:	       0 kB
+Threads:	8

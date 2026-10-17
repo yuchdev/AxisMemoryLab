@@ -29,53 +29,55 @@ left without an owner.
 
 | Item | Status | Where |
 | --- | --- | --- |
-| `/proc/meminfo` (`MemAvailable`, `MemFree`, `Cached`, `Shmem`, `Slab`, `SReclaimable`, `SUnreclaim`) | M0001 | host parser + collector |
-| `/proc/vmstat` | M0001 | host parser |
-| `/proc/pressure/memory` (PSI) | M0001 | host parser; absent PSI is an explicit unavailable state |
-| `/proc/PID/status` (`VmSize`, `VmRSS`, `RssAnon`, `RssFile`, `RssShmem`, `VmSwap`, threads) | Done (in-app, `/proc/self`); M0001 (host, other PID) | `native/src/self_proc.cpp` |
-| `/proc/PID/stat` (start ticks) | Done (in-app); M0001 (host) | probe identity `process_start_ticks` |
-| `/proc/PID/smaps_rollup` (`Pss`, `Private_*`, `Anonymous`, `Swap`) | Done (in-app, opt-in, `include_smaps_rollup`); M0001 (host) | probe; page-table scan cost documented |
-| `/proc/PID/fd` count | Done (in-app, opt-in, `include_fd_count`); M0001 (host) | probe |
-| `/proc/PID/fd` target classes (socket, `anon_inode:dmabuf`, …) and `fdinfo` | M0001 (added) | triggered inventory; analysis in M0002 |
-| `/proc/PID/maps`, `/proc/PID/smaps` (triggered, once) | M0001 (collect, added: opt-in `deep` path with explicit confirmation; today `allow_deep_snapshot` is rejected by config), M0002 (differential report, added) | |
-| `SwapPss`, private hugetlb | M0001 (added) | parser field list |
-| Boot id for segmentation | Done (in-app `identity.boot_id`; analysis segments on it); M0001 (host) | |
-| Cgroup memory (`/sys/fs/cgroup`, v1/v2 detection) | M0001 (added) | conditional source `sources/cgroup.py`; correlation use in M0005-S03 |
-| Cross-process summary (`ps`/`top`-like, accessible PIDs only) | M0001 (added) | part of `discover` and triggered snapshot; never assumes `pidof`/`pgrep` |
-| Axis app log / `journalctl` / syslog markers | M0001 (added) | low-frequency, read-only; apps use syslog for lifecycle markers, never per-frame logs |
-| Axis device server report | M0005 (M5-S05), procedure in M0001 runbook (added) | exported by an authorized operator; never fetched automatically |
-| Device Data Hub CPU/memory topics | M0005 (M5-S01) | alpha maturity, supplementary only; `sources/ddh.py` stays a placeholder until then |
-| `ps` / `top` as convenience | Declined as a source of truth | PB §5 says convenience only |
+| `/proc/meminfo` (`MemAvailable`, `MemFree`, `Cached`, `Shmem`, `Slab`, `SReclaimable`, `SUnreclaim`) | Done (M0001) | `sources/meminfo.py`; missing `MemAvailable` is explicit |
+| `/proc/vmstat` | Done (M0001) | `sources/vmstat.py` |
+| `/proc/pressure/memory` (PSI) | Done (M0001) | absent PSI is an explicit `missing` state |
+| `/proc/PID/status` (`VmSize`, `VmRSS`, `RssAnon`, `RssFile`, `RssShmem`, `VmSwap`, threads) | Done (host any readable PID; in-app `/proc/self`) | |
+| `/proc/PID/stat` (start ticks, CPU, faults) | Done (host and in-app start ticks) | |
+| `/proc/PID/smaps_rollup` | Done (host and in-app, sparse) | no fallback to `smaps` |
+| `/proc/PID/fd` count and target classes (socket, pipe, `dmabuf`, file, …) | Done (host and in-app count) | targets are classified and discarded |
+| `/proc/PID/fdinfo`, `Private_Hugetlb` | M0001 (open) | not parsed or collected yet |
+| `/proc/PID/maps`, `/proc/PID/smaps` (triggered, once) | M0005 (added): needs a separate safety review | `deep` is refused: `snapshot --level deep` exits 3 and `allow_deep_snapshot=true` is rejected; M2-S03 differential reports depend on it |
+| `SwapPss` | Done (M0001) | |
+| Boot id for segmentation | Done (host, in-app, analysis) | |
+| Cgroup memory (v1/v2) | Done (M0001, conditional) | `sources/cgroup.py`; correlation use in M0005-S03 |
+| Cross-process summary (accessible PIDs) | M0001 (open) | `discover` resolves the target by command name only |
+| Axis app log / `journalctl` / syslog | M0001 (open): needs a different, reviewed allowlist; log text may be sensitive | |
+| Axis device server report | M0005 (M5-S05), runbook mentions the export | exported by an authorized operator |
+| Device Data Hub CPU/memory topics | M0005 (M5-S01) | `sources/ddh.py` stays a placeholder until then |
+| `ps` / `top` | Declined as a source of truth | PB §5: convenience only; discovery does not execute tools |
 
 ## 2. Collection policy and host tooling (PB §2, §7, §8; SP §3, §5, §6, §9)
 
 | Item | Status | Where |
 | --- | --- | --- |
-| Level 0 device facts and capability probing | M0001 | `discover`, `capability` record |
-| Level 1 regular samples (10–15 s) | M0001 (host), Done (in-app snapshots) | |
-| Level 2 sparse snapshots (60–300 s) | M0001 | |
-| Level 3 triggered snapshot, cooldown, size/time budget, abort under memory pressure | M0001 | trigger/abort settings already in config |
+| Level 0 device facts and capability probing | Done (M0001) | `discover`, `capability` records; tool presence must be checked by hand |
+| Level 1 regular samples | Done (host); Done (in-app snapshots) | |
+| Level 2 sparse snapshots | Done (M0001) | `smaps_rollup`, fd inventory, cgroup at `smaps_rollup_interval_seconds` |
+| Level 3 triggered snapshot, cooldown, abort under memory pressure | Partial: trigger → sparse snapshot with cooldown, skip under low memory, abort below threshold are Done; the `smaps` part is blocked (deep) | |
 | Level 4 development-only probes | M0005 | gated by verified compatibility |
-| `discover`, `collect`, `annotate`, `snapshot`, `import` commands | M0001 | exit 3 until implemented |
-| SSH transport: dedicated key, host-key validation, timeouts, exponential backoff, clean close, audit record | M0001 | |
-| One short-lived remote command for many reads vs persistent connection (SSH overhead) | M0001 (benchmark on device) | `docs/10-benchmarking-overhead.md` |
-| Atomic append run store, abrupt-disconnect safe, graceful Ctrl-C, no implicit restart | M0001 | |
-| Compressed run store, retention and purge tooling | M0001 (added) | |
-| Immutable annotations / phase markers | Done (convention + in-app marker); M0001 (`annotate`) | `docs/02-protocol-and-schema.md` |
-| Collector self-timing and read errors | Done (in-app `app.probe.*`); M0001 (host) | |
-| Typed absence reasons (`missing`, `permission_denied`, `timeout`, `parse_error`, `unsupported`, `not_collected`) | M0001 (added) | today `reason` is free text; define a code set |
-| Sampling profiles `lightweight` / `standard` / `lab` and byte/time/artifact/queue limits | M0001 (added) | see section 6 for the profile-name mismatch |
-| `smaps_rollup` absent must not fall back to continuous full `smaps` | M0001 | rule enforced by the scheduler |
-| No `smaps`/allocator reports during a memory-pressure emergency | M0001 | abort threshold |
-| Process identity `(boot_id, pid, start_ticks)`; restart closes a segment | Done (analysis); M0001 (collector) | |
+| `discover`, `collect`, `annotate`, `snapshot`, `import`, `purge` | Done (M0001), fixture and simulated-`ssh` tested; not run on a device | `cli_device.py` |
+| SSH transport: key file, host-key verification, timeouts, exponential backoff, no shell, option-injection safe | Done | `transport/ssh.py`; option acceptance checked with `ssh -G` |
+| Separate audit record of SSH sessions | M0001 (open) | the device's own logs only |
+| One multi-read command vs persistent connection | Done: one batched command per cycle; persistent connection not implemented; device benchmark open | `docs/10` |
+| Atomic append run store, abrupt-disconnect safe, graceful Ctrl-C, no implicit restart | Done | `collection/run_store.py` |
+| Compressed run store, retention and purge | Done | `--compress`, `purge` (dry run unless `--confirm`) |
+| Immutable annotations / phase markers | Done | `annotate`, in-app marker |
+| Collector self-timing and read errors | Done (host `collector.*`, in-app `app.probe.*`) | |
+| Typed absence reasons (`missing`, `permission_denied`, `timeout`, `parse_error`, `unsupported`, `not_collected`) | Done (host and schema); in-app probe still free text | M0003 follow-up |
+| Sampling profiles `lightweight` / `standard` / `lab` and limits | Partial: repository profiles and byte/time/interval limits exist; reconcile names (section 6) | M0001 (open) |
+| `smaps_rollup` absent must not fall back to full `smaps` | Done | tested |
+| No heavy reads during a memory-pressure emergency | Done | `sparse_skipped` event, abort |
+| Process identity `(boot_id, pid, start_ticks)`; restart closes a segment | Done | collector events + analysis segments |
 | Monotonic clock for slopes, UTC for coordination | Done | |
-| Collector outage must not block the pipeline; bounded on-device buffer | Done (probe drops and counts; no backpressure); M0001 (host side) | |
-| Manifest: `privacy_level`, consent or incident id, redaction status, workload/config hash | M0001 (added) | manifest has `privacy_classification` only |
-| Local-only guarded archive for `cmdline`, mapping names, open-file paths | M0001 (added) | redaction before external sharing |
-| No reboot, ACAP install/upgrade, developer-mode toggle, firmware change | Done (not implemented anywhere; config rejects mutating flags) | |
-| Compatibility matrix from device evidence | M0001 | `docs/01-axis-compatibility.md` |
-| Optional one-shot device probe (`device-optional/tiny-probe`) | M0001 (only if agentless SSH and in-app are insufficient) | evidence-driven |
-| Fixture-only demo run (`examples/demo-run`) | M0001 (added) | the M1 exit allows it without a device |
+| Collector outage must not block the pipeline; bounded buffer | Done (probe drops and counts; host collector reads only) | |
+| Manifest: privacy classification, consent reference, redaction status, config hash | Done | `--consent-reference`, `--redaction-status`, `config_sha256` |
+| Local-only guarded archive for `cmdline`, mapping names, open-file paths | Done by omission: those are never read or stored | |
+| No reboot, ACAP install/upgrade, developer-mode toggle, firmware change | Done (not implemented anywhere) | |
+| Compatibility matrix from device evidence | M0001 (open): procedure written, rows need a device | `docs/01` |
+| Optional one-shot device probe (`device-optional/tiny-probe`) | M0001 (only if SSH and in-app are insufficient) | evidence-driven |
+| Fixture-only demo run | Done | `examples/demo-run` |
+| 24 h collector soak on a device; one hour of valid device metrics | M0001 (open, needs hardware) | the milestone exit allows the fixture demo meanwhile |
 
 ## 3. Analysis and reporting (PB §1, §3, §8; SP §8, §10; FH §5–6)
 
@@ -181,8 +183,8 @@ for M0000 and are validated strictly; the differences are carried to M0001.
 
 | Owner | Open items |
 | --- | --- |
-| **M0001** | Everything in sections 1–2 marked M0001; typed reason codes; profile/config reconciliation; deep-snapshot path; retention/purge; manifest privacy fields; fixture demo; real-device compatibility evidence |
+| **M0001** | `fdinfo` and `Private_Hugetlb`; all-process summary; Axis log access; SSH audit record; profile/config reconciliation; `tiny-probe` if needed; everything that needs a real device (compatibility rows, SSH overhead, 1 h and 24 h runs) |
 | **M0002** | Plots; rules D, E (and refinements of B, C); `H-RECONNECT`, `H-DETECTION`; step and sawtooth detection; uncertainty and reliability fields; configurable thresholds; time-to-exhaustion estimate; richer report header; CLI parity; remaining synthetic traces; differential `smaps`/fd reports |
 | **M0003** | Device overhead and < 1 MiB measurement; real VDO/Larod adapters (need the SDK); `malloc_info`; ledger latency/stage; large-population sampling; optional emitter helper; Linux (gcc/clang) verification; stage-isolation guide |
 | **M0004** | All of section 5 sampler/symbolization/sanitizer items |
-| **M0005** | DDH, `gdbserver`, `strace`, `perf`/ftrace/eBPF, slab/DMA-BUF debugfs, core-dump guidance, server report ingestion, escalation bundle |
+| **M0005** | Safety review for `deep` captures (`smaps`, allocator reports); DDH, `gdbserver`, `strace`, `perf`/ftrace/eBPF, slab/DMA-BUF debugfs, core-dump guidance, server report ingestion, escalation bundle |

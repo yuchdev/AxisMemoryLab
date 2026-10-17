@@ -11,21 +11,93 @@ Internal byte counts use bytes, not decimal kB or binary KiB. Names should state
 the measured scope and unit. M0001 will define normalization and source parsing
 semantics before collectors are implemented.
 
-## Planned metric sources (M0001 to finalize names)
+## Metric-name registry (M0001)
 
-| Namespace | Source | Notes |
-| --- | --- | --- |
-| `system.mem.*` | `/proc/meminfo` (`MemAvailable`, `MemFree`, `Cached`, `Shmem`, `Slab`, `SReclaimable`, `SUnreclaim`) | Device-wide; never attributable to one process. |
-| `system.vmstat.*` | `/proc/vmstat` (slab, fault, reclaim counters) | Names vary by kernel. |
-| `system.psi.*` | `/proc/pressure/memory` (`some`, `full`) | Only when the kernel enables PSI; stall time, not size. |
-| `process.*` | `/proc/PID/status` (`VmSize`, `VmRSS`, `RssAnon`, `RssFile`, `RssShmem`, threads), `smaps_rollup` (`Pss`, `Private_*`, `Anonymous`, `Swap`) | `smaps_rollup` may be missing or unreadable; mark unavailable. |
-| `process.fd_count`, fd target classes | `/proc/PID/fd` | Count alone gives no buffer sizes. |
-| `app.*` | Application-owned counters (frames, queues, in-flight resources) | Generic names; no VDO/Larod ownership assumed. |
+Every metric the host collector can write. Sizes are bytes (kernel `kB` is 1024 bytes,
+converted at parse time); a field that is present but zero is recorded as `0`; a field that
+cannot be read is recorded as unavailable with a closed `reason_code`
+(`missing`, `permission_denied`, `timeout`, `parse_error`, `unsupported`, `not_collected`)
+and a human-readable reason, never as zero. A test fails if a parser metric is missing from
+this table.
 
-Kernel `kB` values convert to bytes at parse time. `VmSize` is address space,
-not physical use. Private clean plus private dirty approximates USS only for
-ordinary resident pages. A matching acquire/release total is necessary but not
-sufficient evidence of no leak.
+| Metric | Unit | Source | Note |
+| --- | --- | --- | --- |
+| `system.mem.total_bytes` | bytes | `/proc/meminfo` | `MemTotal` |
+| `system.mem.free_bytes` | bytes | `/proc/meminfo` | `MemFree` |
+| `system.mem.available_bytes` | bytes | `/proc/meminfo` | `MemAvailable` |
+| `system.mem.buffers_bytes` | bytes | `/proc/meminfo` | `Buffers` |
+| `system.mem.cached_bytes` | bytes | `/proc/meminfo` | `Cached` |
+| `system.mem.shmem_bytes` | bytes | `/proc/meminfo` | `Shmem` |
+| `system.mem.slab_bytes` | bytes | `/proc/meminfo` | `Slab` |
+| `system.mem.slab_reclaimable_bytes` | bytes | `/proc/meminfo` | `SReclaimable` |
+| `system.mem.slab_unreclaim_bytes` | bytes | `/proc/meminfo` | `SUnreclaim` |
+| `system.mem.swap_total_bytes` | bytes | `/proc/meminfo` | `SwapTotal` |
+| `system.mem.swap_free_bytes` | bytes | `/proc/meminfo` | `SwapFree` |
+| `system.vmstat.pgfault_count` | count | `/proc/vmstat` | `pgfault` |
+| `system.vmstat.pgmajfault_count` | count | `/proc/vmstat` | `pgmajfault` |
+| `system.vmstat.pgscan_kswapd_count` | count | `/proc/vmstat` | `pgscan_kswapd` |
+| `system.vmstat.pgscan_direct_count` | count | `/proc/vmstat` | `pgscan_direct` |
+| `system.vmstat.oom_kill_count` | count | `/proc/vmstat` | `oom_kill` |
+| `system.vmstat.slab_reclaimable_pages` | pages | `/proc/vmstat` | `nr_slab_reclaimable` |
+| `system.vmstat.slab_unreclaimable_pages` | pages | `/proc/vmstat` | `nr_slab_unreclaimable` |
+| `system.psi.memory_some_avg10_percent` | percent | `/proc/pressure/memory` | `some` stall share over 10 s |
+| `system.psi.memory_some_avg60_percent` | percent | `/proc/pressure/memory` | `some` stall share over 60 s |
+| `system.psi.memory_some_avg300_percent` | percent | `/proc/pressure/memory` | `some` stall share over 300 s |
+| `system.psi.memory_some_total_us` | microseconds | `/proc/pressure/memory` | `some` cumulative stall time |
+| `system.psi.memory_full_avg10_percent` | percent | `/proc/pressure/memory` | `full` stall share over 10 s |
+| `system.psi.memory_full_avg60_percent` | percent | `/proc/pressure/memory` | `full` stall share over 60 s |
+| `system.psi.memory_full_avg300_percent` | percent | `/proc/pressure/memory` | `full` stall share over 300 s |
+| `system.psi.memory_full_total_us` | microseconds | `/proc/pressure/memory` | `full` cumulative stall time |
+| `process.vm_size_bytes` | bytes | `/proc/PID/status` | `VmSize` |
+| `process.rss_bytes` | bytes | `/proc/PID/status` | `VmRSS` |
+| `process.rss_anon_bytes` | bytes | `/proc/PID/status` | `RssAnon` |
+| `process.rss_file_bytes` | bytes | `/proc/PID/status` | `RssFile` |
+| `process.rss_shmem_bytes` | bytes | `/proc/PID/status` | `RssShmem` |
+| `process.vm_swap_bytes` | bytes | `/proc/PID/status` | `VmSwap` |
+| `process.threads_count` | count | `/proc/PID/status` | `Threads` |
+| `process.minor_faults_count` | count | `/proc/PID/stat` | field 10 |
+| `process.major_faults_count` | count | `/proc/PID/stat` | field 12 |
+| `process.cpu_user_ticks` | ticks | `/proc/PID/stat` | field 14, clock ticks |
+| `process.cpu_system_ticks` | ticks | `/proc/PID/stat` | field 15, clock ticks |
+| `process.smaps_rss_bytes` | bytes | `/proc/PID/smaps_rollup` | `Rss` |
+| `process.pss_bytes` | bytes | `/proc/PID/smaps_rollup` | `Pss` |
+| `process.private_clean_bytes` | bytes | `/proc/PID/smaps_rollup` | `Private_Clean` |
+| `process.private_dirty_bytes` | bytes | `/proc/PID/smaps_rollup` | `Private_Dirty` |
+| `process.shared_clean_bytes` | bytes | `/proc/PID/smaps_rollup` | `Shared_Clean` |
+| `process.shared_dirty_bytes` | bytes | `/proc/PID/smaps_rollup` | `Shared_Dirty` |
+| `process.anonymous_bytes` | bytes | `/proc/PID/smaps_rollup` | `Anonymous` |
+| `process.swap_bytes` | bytes | `/proc/PID/smaps_rollup` | `Swap` |
+| `process.swap_pss_bytes` | bytes | `/proc/PID/smaps_rollup` | `SwapPss` |
+| `process.uss_approx_bytes` | bytes | `/proc/PID/smaps_rollup` | `Private_Clean + Private_Dirty`; equals USS only for ordinary resident pages |
+| `process.fd_count` | count | `/proc/PID/fd` | all descriptors |
+| `process.fd_socket_count` | count | `/proc/PID/fd` | targets classified `socket` |
+| `process.fd_pipe_count` | count | `/proc/PID/fd` | targets classified `pipe` |
+| `process.fd_dmabuf_count` | count | `/proc/PID/fd` | targets classified `dmabuf` |
+| `process.fd_anon_inode_other_count` | count | `/proc/PID/fd` | targets classified `anon_inode_other` |
+| `process.fd_file_count` | count | `/proc/PID/fd` | targets classified `file` |
+| `process.fd_other_count` | count | `/proc/PID/fd` | targets classified `other` |
+| `process.cgroup_memory_current_bytes` | bytes | cgroup `memory.current` / `memory.usage_in_bytes` | charge of the process's own cgroup |
+| `process.cgroup_memory_limit_bytes` | bytes | cgroup `memory.max` / `memory.limit_in_bytes` | unavailable when no limit is set |
+| `process.cgroup_oom_kill_count` | count | cgroup `memory.events` | v2 only |
+| `collector.cycle_duration_ns` | nanoseconds | collector | time spent in this cycle's reads |
+| `collector.reads_total_count` | count | collector | cumulative reads attempted |
+| `collector.read_errors_count` | count | collector | cumulative reads that failed or were unusable |
+| `collector.bytes_read_bytes` | bytes | collector | cumulative bytes read |
+
+Notes:
+
+- `system.*` is device-wide and never attributable to one process. `process.cgroup_*` is the
+  process's cgroup charge, which measures something different from RSS.
+- `smaps_rollup`, the fd inventory, and the cgroup reads happen at the sparse interval
+  (`smaps_rollup_interval_seconds`) or on a trigger, not on every sample. A sample without
+  them simply does not contain those names.
+- `VmSize` is address space, not physical use. Slab counters in `vmstat` are in pages; the
+  page size is not part of `vmstat`, so they are not converted.
+- `collector.*` describes the collector's own cost and errors, so overhead and data quality
+  are part of every run.
+- fd targets and paths are classified and discarded; they are never stored.
+- Application counters (`app.*`) are chosen by the application; the in-app probe's names are
+  in the next section.
 
 ## Probe-emitted metrics (M0003)
 

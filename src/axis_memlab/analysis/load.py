@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gzip
 import json
 import math
 from dataclasses import dataclass, field
@@ -41,6 +42,7 @@ class LoadedRun:
     manifest: dict[str, Any]
     samples: list[Sample]
     events: list[Event]
+    errors: list[dict[str, Any]] = field(default_factory=list)
     problems: list[str] = field(default_factory=list)
 
     @property
@@ -82,7 +84,12 @@ def load_run(path: str | Path) -> LoadedRun:
         raise RunDataError(f"{root}: invalid manifest.json: {exc}") from None
     if not isinstance(manifest, dict):
         raise RunDataError(f"{root}: manifest.json must be an object")
-    text = (root / "records.jsonl").read_text(encoding="utf-8", errors="replace")
+    plain = root / "records.jsonl"
+    if plain.exists():
+        text = plain.read_text(encoding="utf-8", errors="replace")
+    else:
+        with gzip.open(root / "records.jsonl.gz", "rb") as compressed:
+            text = compressed.read().decode("utf-8", errors="replace")
 
     run = LoadedRun(path=root, manifest=manifest, samples=[], events=[])
     last_ts = -1
@@ -131,6 +138,10 @@ def load_run(path: str | Path) -> LoadedRun:
                     line=number,
                 )
             )
+        elif raw["record_type"] == "error":
+            ann = raw.get("annotations")
+            if isinstance(ann, dict):
+                run.errors.append(ann)
         elif raw["record_type"] == "event":
             ann = raw.get("annotations")
             if isinstance(ann, dict) and isinstance(ann.get("event"), str):

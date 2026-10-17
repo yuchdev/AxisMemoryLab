@@ -115,4 +115,4 @@ def test_markdown_html_csv_renderers(run_dir: Path, tmp_path: Path) -> None:
 def test_planned_commands_are_the_remaining_ones() -> None:
     from axis_memlab.cli import _PLANNED
 
-    assert set(_PLANNED) == {"discover", "collect", "annotate", "snapshot", "import", "symbolize"}
+    assert set(_PLANNED) == {"symbolize"}

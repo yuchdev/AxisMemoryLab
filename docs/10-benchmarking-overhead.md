@@ -62,3 +62,14 @@ What this does and does not show:
 3. Compare throughput/latency, CPU, RSS slope, and `app.probe.*` health metrics.
 4. Record the result in the run manifest and the report's limitations, per device model
    and firmware. Do not generalize across models.
+
+## Collector overhead (M0001)
+
+The host collector reports its own cost in every sample: `collector.cycle_duration_ns`,
+`collector.reads_total_count`, `collector.read_errors_count`, `collector.bytes_read_bytes`.
+To measure SSH overhead on a device, run the same collection with the intervals you intend
+to use and compare the cycle duration against the interval; then compare a regular-only run
+against one with frequent sparse reads. Per cycle the collector makes one SSH connection for
+the regular reads, plus one for the fd listing and one for sparse files when due, so
+connection setup dominates; if it is too costly, lengthen the interval rather than adding
+persistent connections (not implemented). No device numbers exist yet.

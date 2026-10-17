@@ -37,6 +37,16 @@ def analyze_run(
     """Return (findings, limitations) for one run."""
     findings: list[dict[str, Any]] = []
     limitations = [f"{run.run_id}: {problem}" for problem in run.problems]
+    if run.errors:
+        counts: dict[str, int] = {}
+        for item in run.errors:
+            key = f"{item.get('source', '?')}:{item.get('reason_code', '?')}"
+            counts[key] = counts.get(key, 0) + 1
+        summary = ", ".join(f"{k} x{n}" for k, n in sorted(counts.items()))
+        limitations.append(
+            f"{run.run_id}: the collector recorded read errors ({summary}); affected metrics "
+            "are unavailable for those samples"
+        )
     segments = segment_run(run)
     if not segments:
         limitations.append(f"{run.run_id}: no usable sample records")

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — Milestone 0001
+
+Host collection: read-only allowlisted `/proc` and cgroup parsers, local and SSH readers
+(system `ssh`, host keys verified, batched reads), capability discovery, append-only run
+store with gzip and retention, scheduler with sparse cadence, triggers, memory-pressure
+skip/abort and backoff, and the commands `discover`, `collect`, `annotate`, `snapshot`
+(sparse only), `import`, `purge`. Contract additions: `reason_code`, capability/error/event
+shapes, `collector.*` namespace, manifest fields. README gains external requirements; new
+runbook (`docs/05`), metric registry (`docs/03`), demo run. Fixture-tested only; deep
+captures stay blocked.
+
 ## Unreleased — Milestone 0003
 
 Native probe: `AXMEM_COUNTERS` and `AXMEM_LEDGER` modes (ABI v2), JSON Lines snapshots

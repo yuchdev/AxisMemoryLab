@@ -1,0 +1,16 @@
+00400000-ffffffffff601000 ---p 00000000 00:00 0                          [rollup]
+Rss:                9000 kB
+Pss:                6000 kB
+Pss_Anon:           4000 kB
+Pss_File:           1900 kB
+Pss_Shmem:           100 kB
+Shared_Clean:       2000 kB
+Shared_Dirty:          0 kB
+Private_Clean:      1500 kB
+Private_Dirty:      5000 kB
+Referenced:         9000 kB
+Anonymous:          6000 kB
+LazyFree:              0 kB
+Swap:                  0 kB
+SwapPss:               0 kB
+Locked:                0 kB
