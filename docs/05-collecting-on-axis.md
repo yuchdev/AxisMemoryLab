@@ -65,15 +65,15 @@ the sleeps between cycles for demos.
 Only these paths, only through `cat` / `ls -l` templates; nothing else is ever sent to the
 device, and no text you type reaches the remote shell.
 
-| Path | Used for | Cadence |
-| --- | --- | --- |
-| `/proc/meminfo`, `/proc/vmstat`, `/proc/pressure/memory` | device-wide memory, reclaim, PSI | every cycle |
-| `/proc/PID/status`, `/proc/PID/stat` | per-process residency, CPU, faults, start ticks | every cycle |
-| `/proc/PID/smaps_rollup` | PSS, private/shared, anonymous | sparse interval or trigger |
-| `/proc/PID/fd` (`ls -l`) | descriptor count and classes (targets are discarded) | sparse interval or trigger |
-| `/proc/PID/cgroup`, cgroup `memory.*` files | cgroup charge, limit, OOM kills | sparse interval or trigger |
-| `/proc/<n>/comm` (all visible processes) | resolving `--app` to a pid | at start, and when the process is lost |
-| `/proc/sys/kernel/osrelease`, `.../random/boot_id` | facts and run segmentation | at start |
+| Path                                                     | Used for                                             | Cadence                                |
+|----------------------------------------------------------|------------------------------------------------------|----------------------------------------|
+| `/proc/meminfo`, `/proc/vmstat`, `/proc/pressure/memory` | device-wide memory, reclaim, PSI                     | every cycle                            |
+| `/proc/PID/status`, `/proc/PID/stat`                     | per-process residency, CPU, faults, start ticks      | every cycle                            |
+| `/proc/PID/smaps_rollup`                                 | PSS, private/shared, anonymous                       | sparse interval or trigger             |
+| `/proc/PID/fd` (`ls -l`)                                 | descriptor count and classes (targets are discarded) | sparse interval or trigger             |
+| `/proc/PID/cgroup`, cgroup `memory.*` files              | cgroup charge, limit, OOM kills                      | sparse interval or trigger             |
+| `/proc/<n>/comm` (all visible processes)                 | resolving `--app` to a pid                           | at start, and when the process is lost |
+| `/proc/sys/kernel/osrelease`, `.../random/boot_id`       | facts and run segmentation                           | at start                               |
 
 Never read: `cmdline`, `environ`, `maps`, `smaps`, `/proc/version` (it can contain build host
 names), logs, or the file system outside this list.
@@ -112,22 +112,22 @@ early but safely (interrupt or memory pressure).
 `runs/<run_id>/manifest.json` and `records.jsonl` (`records.jsonl.gz` with `--compress`;
 compressed runs are read-only). Records are only appended, one line per write; a crash can
 leave one torn last line, which the next writer starts after and readers report. The
-manifest changes only its `status`. The archive contains no host name, user name, key path,
+manifest changes only its `status`. The archive contains no host name, username, key path,
 command line, environment, fd target, or image data; the pseudonym, consent reference, and
 config hash are in the manifest. Treat it as sensitive until reviewed
 (`--privacy-classification`, default `sensitive`).
 
 ## 7. Troubleshooting
 
-| Symptom | Likely cause and next step |
-| --- | --- |
-| Exit 5, "Host key verification failed" | Host key not in `known_hosts` or changed. Verify it out of band and add it; do not disable checking |
-| Exit 5, "Permission denied (publickey)" | Wrong key or account; password login is disabled |
-| `process_status` capability `denied` | The account cannot read that process. Use the in-app probe and `import` |
-| `--app` finds nothing | The account cannot see the process, or the name differs (`comm` is 15 characters). Use `--pid` |
-| `process_smaps_rollup` `missing` | Kernel lacks it or it is hidden; RSS categories from `status` carry the analysis. The tool does not fall back to `smaps` |
-| Many `timeout` errors | Raise `ssh_command_timeout_seconds`, or reduce the interval; check `collector.cycle_duration_ns` |
-| `snapshot --level deep` exits 3 | Deep captures are blocked by the safety model; see `docs/08-security-privacy.md` |
+| Symptom                                 | Likely cause and next step                                                                                               |
+|-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| Exit 5, "Host key verification failed"  | Host key not in `known_hosts` or changed. Verify it out of band and add it; do not disable checking                      |
+| Exit 5, "Permission denied (publickey)" | Wrong key or account; password login is disabled                                                                         |
+| `process_status` capability `denied`    | The account cannot read that process. Use the in-app probe and `import`                                                  |
+| `--app` finds nothing                   | The account cannot see the process, or the name differs (`comm` is 15 characters). Use `--pid`                           |
+| `process_smaps_rollup` `missing`        | Kernel lacks it or it is hidden; RSS categories from `status` carry the analysis. The tool does not fall back to `smaps` |
+| Many `timeout` errors                   | Raise `ssh_command_timeout_seconds`, or reduce the interval; check `collector.cycle_duration_ns`                         |
+| `snapshot --level deep` exits 3         | Deep captures are blocked by the safety model; see `docs/08-security-privacy.md`                                         |
 
 ## 8. Not provided
 
@@ -139,6 +139,6 @@ listener. Later milestones may add some of these behind separate reviews.
 
 Triggered sparse snapshots are part of `collect` (section 4). Anything beyond them (`strace`,
 `gdbserver`, `perf`, `ftrace`/eBPF, slab and DMA-BUF accounting, DDH, core dumps) is **not** part
-of collection: it is gated by verified evidence per firmware and described in
+of a collection: it is gated by verified evidence per firmware and described in
 `docs/13-advanced-diagnostics.md`. Deep captures are blocked
 (`docs/decisions/0003-advanced-diagnostics.md`).

@@ -13,11 +13,11 @@ objects are owned, opens no network connection, and starts no thread.
 
 Select exactly one base mode per build (none or several is a configure error); `AXMEM_SAMPLER` may be added to COUNTERS or LEDGER:
 
-| Option | What you get | Hot-path cost |
-| --- | --- | --- |
-| `-DAXMEM_DISABLED=ON` | Inline no-ops; nothing to link; `axmem_emit_snapshot()` returns `AXMEM_STATUS_DISABLED` | none |
-| `-DAXMEM_COUNTERS=ON` | Counters, gauges, per-kind acquired/released/in-flight **counts**, snapshots | relaxed atomics, no lock |
-| `-DAXMEM_LEDGER=ON` | `COUNTERS` plus an identity ledger: exact in-flight **bytes**, high-water mark, duplicate and unmatched detection, oldest live ids | one mutex per acquire/release |
+| Option                      | What you get                                                                                                                                              | Hot-path cost                           |
+|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------|
+| `-DAXMEM_DISABLED=ON`       | Inline no-ops; nothing to link; `axmem_emit_snapshot()` returns `AXMEM_STATUS_DISABLED`                                                                   | none                                    |
+| `-DAXMEM_COUNTERS=ON`       | Counters, gauges, per-kind acquired/released/in-flight **counts**, snapshots                                                                              | relaxed atomics, no lock                |
+| `-DAXMEM_LEDGER=ON`         | `COUNTERS` plus an identity ledger: exact in-flight **bytes**, high-water mark, duplicate and unmatched detection, oldest live ids                        | one mutex per acquire/release           |
 | `AXMEM_SAMPLER=ON` (add-on) | Statistical allocation sampling and the opt-in `operator new` hook; needs COUNTERS or LEDGER, refused with DISABLED. See `docs/12-allocation-sampling.md` | sampled events only; development builds |
 
 ```bash
@@ -76,14 +76,14 @@ Rules enforced by the library:
 
 ## 3. What a snapshot contains
 
-| Group | Metrics |
-| --- | --- |
-| Your counters and gauges | exactly the names you registered |
-| Process (`/proc/self`) | `process.rss_bytes`, `rss_anon_bytes`, `rss_file_bytes`, `rss_shmem_bytes`, `vm_swap_bytes`, `threads_count`; with `include_smaps_rollup`: `pss_bytes`, `private_clean_bytes`, `private_dirty_bytes`, `anonymous_bytes`, `swap_bytes`; with `include_fd_count`: `fd_count` |
-| Resource kinds | `app.resource.<kind>.acquired_total_count`, `released_total_count`, `in_flight_count`, `in_flight_bytes` (LEDGER; unavailable in COUNTERS), `high_watermark_bytes` (LEDGER) |
-| Ledger (LEDGER) | `app.ledger.capacity_count`, `live_count`, `events_dropped_count`, `duplicate_acquire_count`, `unmatched_release_count`, `degraded`; `annotations.ledger.oldest_live` lists up to 8 oldest live resources with kind, id, sequence, bytes, age |
-| Allocator (opt-in, glibc 2.33+) | `app.allocator.arena_bytes`, `in_use_bytes`, `free_bytes`, `mmapped_bytes`; unavailable elsewhere. `mallinfo2` takes the arena lock: development only |
-| Probe health | `app.probe.snapshots_emitted_count`, `snapshots_dropped_count`, `registration_rejected_count`, `rejected_calls_count`, `output_bytes`, `snapshot_duration_ns`, `metric_slots_used_count` |
+| Group                           | Metrics                                                                                                                                                                                                                                                                    |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Your counters and gauges        | exactly the names you registered                                                                                                                                                                                                                                           |
+| Process (`/proc/self`)          | `process.rss_bytes`, `rss_anon_bytes`, `rss_file_bytes`, `rss_shmem_bytes`, `vm_swap_bytes`, `threads_count`; with `include_smaps_rollup`: `pss_bytes`, `private_clean_bytes`, `private_dirty_bytes`, `anonymous_bytes`, `swap_bytes`; with `include_fd_count`: `fd_count` |
+| Resource kinds                  | `app.resource.<kind>.acquired_total_count`, `released_total_count`, `in_flight_count`, `in_flight_bytes` (LEDGER; unavailable in COUNTERS), `high_watermark_bytes` (LEDGER)                                                                                                |
+| Ledger (LEDGER)                 | `app.ledger.capacity_count`, `live_count`, `events_dropped_count`, `duplicate_acquire_count`, `unmatched_release_count`, `degraded`; `annotations.ledger.oldest_live` lists up to 8 oldest live resources with kind, id, sequence, bytes, age                              |
+| Allocator (opt-in, glibc 2.33+) | `app.allocator.arena_bytes`, `in_use_bytes`, `free_bytes`, `mmapped_bytes`; unavailable elsewhere. `mallinfo2` takes the arena lock: development only                                                                                                                      |
+| Probe health                    | `app.probe.snapshots_emitted_count`, `snapshots_dropped_count`, `registration_rejected_count`, `rejected_calls_count`, `output_bytes`, `snapshot_duration_ns`, `metric_slots_used_count`                                                                                   |
 
 Identity carries `device_id`, `pid`, `process_start_ticks`, and `boot_id` when readable, so
 the analysis segments on restarts automatically.
@@ -116,9 +116,9 @@ the buffer-lifetime rules of the SDK generation in use.
 - **VDO video buffers.** Acquire when the SDK hands the buffer to the application; release
   directly after the call that returns it. Axis lists a `vdo_buffer_get_data` leak on some
   ARTPEC firmware (`docs/01-axis-compatibility.md`): a rising in-flight count after the
-  release call is not necessarily your code, so repeat on a firmware outside that range.
-- **Larod tensors and jobs.** Larod 3 changes who frees buffers and how DMA buffers are
-  synchronised. Hook the destruction calls of the generation you build against; do not
+  release call is not necessarily your code, so repeat on firmware outside that range.
+- **Larod tensors and jobs.** Larod 3 changes who free buffers and how DMA buffers are
+  synchronized. Hook the destruction calls of the generation you build against; do not
   reuse hooks written for another generation. Count jobs submitted/completed and tensors
   active as separate kinds or counters.
 - **Image conversion, queues, results, network retry buffers.** Use gauges for depth and
@@ -130,7 +130,7 @@ the buffer-lifetime rules of the SDK generation in use.
 
 To tell a backlog from a leak, make each stage independently switchable in a test build:
 acquisition, conversion, inference, result queue, event/network upload, and diagnostics.
-Each toggle needs a defined bypass behaviour (for example, drop the frame at the boundary
+Each toggle needs a defined bypass behavior (for example, drop the frame at the boundary
 and release it) and a phase marker when it flips. Add controls for the maximum queue count
 and bytes, and a test-triggered drain. Then compare acquisition-only with the full pipeline
 and re-enable stages one at a time (`docs/11-investigation-workflow.md`, S6). These toggles

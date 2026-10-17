@@ -36,14 +36,14 @@ escalate with a reproducible case.
 
 ## 1. What exists today
 
-| Capability | State | Use in this workflow |
-| --- | --- | --- |
-| `axis-memlab config check` | implemented (M0000) | Validate the safety profile before any run |
-| `axis-memlab analyze / compare / report` | implemented (M0002), synthetic-validated | Stages 3, 4, 7 |
-| C++ probe, `COUNTERS` and `LEDGER` modes | implemented (M0003), host-tested, **not yet run on a camera** | Stage 5 |
-| `discover`, `collect`, `annotate`, `snapshot`, `import`, `purge` | implemented (M0001), fixture-tested, **not yet run on a camera** | Stages 1, 2, 5 |
-| Allocation sampling (`AXMEM_SAMPLER`) and `axis-memlab symbolize`; sanitizer and heap-profiler replay instructions | implemented (M0004), host-tested; not run on a camera | Stage 8 (escalation); `docs/12-allocation-sampling.md` |
-| Vendor-assisted kernel/driver inspection (`gdbserver`, `strace`, `perf`, slab/DMA-BUF), device server report | gate, evidence record, DDH import, platform rules, and bundle implemented (M0005); **no diagnostic has been run on a device** | Stage 8 (escalation); `docs/13-advanced-diagnostics.md` |
+| Capability                                                                                                         | State                                                                                                                         | Use in this workflow                                    |
+|--------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| `axis-memlab config check`                                                                                         | implemented (M0000)                                                                                                           | Validate the safety profile before any run              |
+| `axis-memlab analyze / compare / report`                                                                           | implemented (M0002), synthetic-validated                                                                                      | Stages 3, 4, 7                                          |
+| C++ probe, `COUNTERS` and `LEDGER` modes                                                                           | implemented (M0003), host-tested, **not yet run on a camera**                                                                 | Stage 5                                                 |
+| `discover`, `collect`, `annotate`, `snapshot`, `import`, `purge`                                                   | implemented (M0001), fixture-tested, **not yet run on a camera**                                                              | Stages 1, 2, 5                                          |
+| Allocation sampling (`AXMEM_SAMPLER`) and `axis-memlab symbolize`; sanitizer and heap-profiler replay instructions | implemented (M0004), host-tested; not run on a camera                                                                         | Stage 8 (escalation); `docs/12-allocation-sampling.md`  |
+| Vendor-assisted kernel/driver inspection (`gdbserver`, `strace`, `perf`, slab/DMA-BUF), device server report       | gate, evidence record, DDH import, platform rules, and bundle implemented (M0005); **no diagnostic has been run on a device** | Stage 8 (escalation); `docs/13-advanced-diagnostics.md` |
 
 Every tool and technique in the tech notes has an owner; see
 `docs/roadmap/tech-notes-coverage.md`.
@@ -71,27 +71,27 @@ A run archive is a directory with `manifest.json` and `records.jsonl`
                           S8 Escalate ◄── S7 Report ◄── S6 Targeted experiments ◄── S5 Instrument
 ```
 
-| Stage | Output | Gate to leave the stage |
-| --- | --- | --- |
-| S0 Plan | Written test plan | Plan reviewed; stop condition set |
-| S1 Identify | Completed manifest, capability list | Model, SoC, firmware, SDK, build known |
-| S2 Baseline matrix | Runs for T0–T2 (+T5/T6 as needed) | Each run complete, ≥ 2 repetitions of decisive ones |
-| S3 Locate growth | Report per run with segments and trends | G1 and G2 answered |
-| S4 Discriminate | Paired comparisons and normalized growth | G3 answered or declared unanswerable without counters |
-| S5 Instrument | Probe in the app, overhead measured | Counters track the stage under suspicion |
-| S6 Targeted experiments | Prediction vs outcome per experiment | One hypothesis survives, or all are refuted |
-| S7 Report | Evidence report with limitations | Reviewer can reproduce the claim |
-| S8 Escalate | Reproducible case for vendor or maintainers | Only if S6 leaves an unowned remainder |
+| Stage                   | Output                                      | Gate to leave the stage                               |
+|-------------------------|---------------------------------------------|-------------------------------------------------------|
+| S0 Plan                 | Written test plan                           | Plan reviewed; stop condition set                     |
+| S1 Identify             | Completed manifest, capability list         | Model, SoC, firmware, SDK, build known                |
+| S2 Baseline matrix      | Runs for T0–T2 (+T5/T6 as needed)           | Each run complete, ≥ 2 repetitions of decisive ones   |
+| S3 Locate growth        | Report per run with segments and trends     | G1 and G2 answered                                    |
+| S4 Discriminate         | Paired comparisons and normalized growth    | G3 answered or declared unanswerable without counters |
+| S5 Instrument           | Probe in the app, overhead measured         | Counters track the stage under suspicion              |
+| S6 Targeted experiments | Prediction vs outcome per experiment        | One hypothesis survives, or all are refuted           |
+| S7 Report               | Evidence report with limitations            | Reviewer can reproduce the claim                      |
+| S8 Escalate             | Reproducible case for vendor or maintainers | Only if S6 leaves an unowned remainder                |
 
 ## 3. Stage 0 — Plan
 
-1. Write the **question** in one sentence, for example "Does private anonymous memory of
+1. Write the **question** in one sentence, for example, "Does private anonymous memory of
    the analytics process keep growing after a 10-minute warm-up under constant 1080p15
    H.264 input?"
 2. Choose the **phases** from the matrix in S2 that can answer it; do not run all of them
    by default.
 3. Declare **warm-up** (the config's `[analysis].warmup_seconds`; the default of 60 s is a
-   placeholder: set it from the application's real start-up behaviour), **duration**
+   placeholder: set it from the application's real start-up behavior), **duration**
    (long enough that the smallest growth worth caring about exceeds sample noise;
    estimate from a pilot run), **repetitions**, and **abort condition**.
 4. Pick the **profile** (`configs/default.toml`, `lightweight`, `inapp-only`, `stress-lab`)
@@ -126,23 +126,23 @@ Check platform facts that change the hypothesis list before any measurement:
 - Whether the SSH user can read the application's `/proc/PID`. If not, S5 (in-app) is the
   only per-process source, so schedule it sooner.
 
-**Exit:** manifest complete; capability list written; first suspects ranked.
+**Exit:** manifest complete; a capability list written; first suspects ranked.
 
 ## 5. Stage 2 — Baseline and workload matrix
 
 Run the smallest subset that discriminates. Phase markers separate the phases inside one
 run when the application stays up; use separate runs when a restart is needed.
 
-| ID | Phase | Holds constant | Tells you |
-| --- | --- | --- | --- |
-| T0 | Camera up, application stopped | Default Axis services | Platform baseline and drift |
-| T1 | Application loaded, video processing off | Same services | Start-up and idle behaviour |
-| T2 | Constant steady video processing | Scene, fps, codec | Frame-rate-linked growth |
-| T3 | More detections/objects, same fps | T2 settings | Result-driven growth |
-| T4 | Repeated reconnect or stream/inference re-init | T2 settings | Lifecycle cleanup defects |
-| T5 | Processing off, queues drained, process kept | T2 settings | Backlog vs retained memory |
-| T6 | Long steady run after warm-up | T2 settings | Persistent slope vs plateau |
-| T7 | Same test on other firmware/device | Everything else | Platform-specific regression |
+| ID | Phase                                          | Holds constant        | Tells you                    |
+|----|------------------------------------------------|-----------------------|------------------------------|
+| T0 | Camera up, application stopped                 | Default Axis services | Platform baseline and drift  |
+| T1 | Application loaded, video processing off       | Same services         | Start-up and idle behaviour  |
+| T2 | Constant steady video processing               | Scene, fps, codec     | Frame-rate-linked growth     |
+| T3 | More detections/objects, same fps              | T2 settings           | Result-driven growth         |
+| T4 | Repeated reconnect or stream/inference re-init | T2 settings           | Lifecycle cleanup defects    |
+| T5 | Processing off, queues drained, process kept   | T2 settings           | Backlog vs retained memory   |
+| T6 | Long steady run after warm-up                  | T2 settings           | Persistent slope vs plateau  |
+| T7 | Same test on other firmware/device             | Everything else       | Platform-specific regression |
 
 **Sampling (starting points from the default profile):** regular samples every 10–15 s
 (`sample_interval_seconds`), `smaps_rollup` every 1–5 min if readable
@@ -175,23 +175,23 @@ Read the report in this order: **limitations → segments → trends → hypothe
 
 **Gate G1 — Is there sustained growth after warm-up?**
 
-| `system.mem.available_bytes` | process anon RSS / PSS | Reading | Go to |
-| --- | --- | --- | --- |
-| falling | rising | Growth is in the process (device-wide effect follows) | G2 |
-| falling | flat | Not in the monitored process: other service, shared/driver memory, or page cache | G2b |
-| flat | rising | Process grows but system compensates (reclaim/cache): check `Cached`, `Shmem`, PSI | G2 |
-| flat | flat | No reproduction in this window | Lengthen the run (T6), vary the workload (T3/T4), or conclude "not reproduced under these conditions" |
+| `system.mem.available_bytes` | process anon RSS / PSS | Reading                                                                            | Go to                                                                                                 |
+|------------------------------|------------------------|------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| falling                      | rising                 | Growth is in the process (device-wide effect follows)                              | G2                                                                                                    |
+| falling                      | flat                   | Not in the monitored process: other service, shared/driver memory, or page cache   | G2b                                                                                                   |
+| flat                         | rising                 | Process grows but system compensates (reclaim/cache): check `Cached`, `Shmem`, PSI | G2                                                                                                    |
+| flat                         | flat                   | No reproduction in this window                                                     | Lengthen the run (T6), vary the workload (T3/T4), or conclude "not reproduced under these conditions" |
 
 **Gate G2 — Which memory class inside the process?** Use `RssAnon`, `RssFile`,
 `RssShmem`, and `smaps_rollup` private/shared categories (never `VmSize`, never summed
 RSS).
 
-| Observation | Prioritize |
-| --- | --- |
-| `RssAnon` and private dirty rise together | Application heap, queues, caches, object retention |
+| Observation                                     | Prioritize                                               |
+|-------------------------------------------------|----------------------------------------------------------|
+| `RssAnon` and private dirty rise together       | Application heap, queues, caches, object retention       |
 | `RssShmem`/shared mappings rise; fd count rises | Video/inference buffer ownership (shared or DMA buffers) |
-| `RssFile` rises | Mapped files, libraries, model files; usually bounded |
-| Everything rises at start-up, then plateaus | High-water mark, not necessarily a leak (H-PLATEAU) |
+| `RssFile` rises                                 | Mapped files, libraries, model files; usually bounded    |
+| Everything rises at start-up, then plateaus     | High-water mark, not necessarily a leak (H-PLATEAU)      |
 
 **Gate G2b — System falls, process flat.** This is *not* evidence of a kernel leak. Next:
 list other accessible processes and compare against T0; look at `Cached`, `Shmem`,
@@ -210,13 +210,13 @@ axis-memlab compare --baseline T2_RUN --candidate T3_RUN --config configs/defaul
 Read the report's comparability notes first: any controlled field that differs or is not
 recorded weakens the pair. Then:
 
-| Comparison | If slope differs | If slope is similar |
-| --- | --- | --- |
-| T1 vs T2 | Growth needs video processing | Growth is in start-up/idle behaviour |
-| T2 vs T3 | Growth tracks detections/results | Growth is frame-rate linked |
-| T2 vs T5 | Drained queues release memory → backlog; no release → retention | n/a |
-| T4 per cycle | Per-reconnect growth → lifecycle cleanup defect | n/a |
-| T2 on firmware A vs B | Platform regression; check the VDO range first | Application-side |
+| Comparison            | If slope differs                                                | If slope is similar                  |
+|-----------------------|-----------------------------------------------------------------|--------------------------------------|
+| T1 vs T2              | Growth needs video processing                                   | Growth is in start-up/idle behaviour |
+| T2 vs T3              | Growth tracks detections/results                                | Growth is frame-rate linked          |
+| T2 vs T5              | Drained queues release memory → backlog; no release → retention | n/a                                  |
+| T4 per cycle          | Per-reconnect growth → lifecycle cleanup defect                 | n/a                                  |
+| T2 on firmware A vs B | Platform regression; check the VDO range first                  | Application-side                     |
 
 **Normalization.** Raw slope per hour is always available. If the application exports
 counters (S5), list them in `[analysis].normalization` to get growth per 1,000 frames,
@@ -239,11 +239,11 @@ the process. Prefer the lowest mode that answers the question.
 
 ### 8.1 Choose the mode
 
-| Mode | Cost on hot path | Use for |
-| --- | --- | --- |
-| `AXMEM_DISABLED` (default) | none (inline no-ops) | Shipping builds; the control run |
-| `AXMEM_COUNTERS` | relaxed atomics | Always-on-capable counters: totals, queue depths, per-kind in-flight **counts** |
-| `AXMEM_LEDGER` | one mutex per acquire/release | Lab/development: exact in-flight **bytes**, duplicate/unmatched detection, oldest live ids |
+| Mode                       | Cost on hot path              | Use for                                                                                    |
+|----------------------------|-------------------------------|--------------------------------------------------------------------------------------------|
+| `AXMEM_DISABLED` (default) | none (inline no-ops)          | Shipping builds; the control run                                                           |
+| `AXMEM_COUNTERS`           | relaxed atomics               | Always-on-capable counters: totals, queue depths, per-kind in-flight **counts**            |
+| `AXMEM_LEDGER`             | one mutex per acquire/release | Lab/development: exact in-flight **bytes**, duplicate/unmatched detection, oldest live ids |
 
 Build and test: `cmake -S . -B build/native -DAXMEM_COUNTERS=ON` (or
 `-DAXMEM_LEDGER=ON`), then `ctest`. Exactly one mode must be selected; combining modes or
@@ -267,13 +267,13 @@ requesting the sampler is a configure-time error.
 
 ### 8.3 Choose metrics for the hypothesis under test
 
-| Hypothesis | Minimum instrumentation |
-| --- | --- |
-| Unbounded queue/retention | Per-queue depth (count) and bytes gauges |
-| Missed release | `ResourceKind` for each lifetime-managed resource (frames, tensors, buffers); compare `in_flight_count` with throughput |
-| Allocator retention | `LEDGER` in-flight bytes **and** `include_allocator_stats` (glibc only); compare with `process.rss_anon_bytes` |
-| Reconnect cleanup | A reconnect counter plus per-kind in-flight count before/after each cycle |
-| Result accumulation | Result-cache entries/bytes gauges and a detections counter |
+| Hypothesis                | Minimum instrumentation                                                                                                 |
+|---------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| Unbounded queue/retention | Per-queue depth (count) and bytes gauges                                                                                |
+| Missed release            | `ResourceKind` for each lifetime-managed resource (frames, tensors, buffers); compare `in_flight_count` with throughput |
+| Allocator retention       | `LEDGER` in-flight bytes **and** `include_allocator_stats` (glibc only); compare with `process.rss_anon_bytes`          |
+| Reconnect cleanup         | A reconnect counter plus per-kind in-flight count before/after each cycle                                               |
+| Result accumulation       | Result-cache entries/bytes gauges and a detections counter                                                              |
 
 ### 8.4 Measure the overhead (control for the instrument)
 
@@ -301,20 +301,20 @@ numbers are no longer trustworthy), `app.ledger.unmatched_release_count > 0` or
 Each experiment states a **prediction that could be wrong**, the change, the control, and
 the refutation criterion, before it is run.
 
-| Hypothesis | Experiment | Supports if | Refutes if |
-| --- | --- | --- | --- |
-| Queue retention | Cap or drain the queue (T5-style) | Post-warm-up slope drops toward zero and queue gauge is bounded | Slope unchanged with bounded queue |
-| Missed release | Fix or stub the suspect release path on a lab build | `in_flight_count` stops rising; process slope drops | In-flight flat before and after, slope persists |
-| Allocator retention | Development-only allocator experiment (for example a trim call at a quiet point, or a different allocator build) | RSS drops while tracked bytes were flat | No change |
-| Reconnect cleanup | N identical start/stop cycles | Step per cycle, flat in between | No per-cycle step |
-| Result accumulation | Disable or cap result publication | Slope tracks detections and disappears | Slope unchanged |
-| Platform regression | Same build on firmware A vs B | Slope differs across firmware | Same slope |
-| Not in process | Stop analytics (T1) while watching system memory | Decline continues | Decline stops |
+| Hypothesis          | Experiment                                                                                                       | Supports if                                                     | Refutes if                                      |
+|---------------------|------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|-------------------------------------------------|
+| Queue retention     | Cap or drain the queue (T5-style)                                                                                | Post-warm-up slope drops toward zero and queue gauge is bounded | Slope unchanged with bounded queue              |
+| Missed release      | Fix or stub the suspect release path on a lab build                                                              | `in_flight_count` stops rising; process slope drops             | In-flight flat before and after, slope persists |
+| Allocator retention | Development-only allocator experiment (for example a trim call at a quiet point, or a different allocator build) | RSS drops while tracked bytes were flat                         | No change                                       |
+| Reconnect cleanup   | N identical start/stop cycles                                                                                    | Step per cycle, flat in between                                 | No per-cycle step                               |
+| Result accumulation | Disable or cap result publication                                                                                | Slope tracks detections and disappears                          | Slope unchanged                                 |
+| Platform regression | Same build on firmware A vs B                                                                                    | Slope differs across firmware                                   | Same slope                                      |
+| Not in process      | Stop analytics (T1) while watching system memory                                                                 | Decline continues                                               | Decline stops                                   |
 
 A trim or allocator change that lowers RSS shows retention, not that a leak did or did
 not exist. One surviving hypothesis is a candidate cause; confirm by a fix that removes
 the growth and by a repeat. Validate a fix under the same workload including reconnect
-cycles, and with a long soak (for example 24 h) if the memory budget permits.
+cycles, and with a long soak (for example, 24 h) if the memory budget permits.
 
 ## 10. Stage 7 — Report
 
@@ -327,7 +327,7 @@ comparison. A report that others can rely on includes:
 - paired comparisons with their comparability notes and repetition count;
 - the hypotheses that were observed, those refuted by experiments, and those not
   evaluated (reconnect and detection hypotheses need counters);
-- the limitations list, unedited.
+- the limitation list, unedited.
 
 **Do not write:** "there is a leak" from a regression alone; "the kernel leaks" from
 falling `MemAvailable` with flat process memory; conclusions from a single run; or any
@@ -337,12 +337,12 @@ claim about firmware not tested.
 
 Escalate only when S6 leaves a remainder the application does not own.
 
-| Remainder | Next step | Owner |
-| --- | --- | --- |
-| Growth only in application private memory, source unclear | Allocation sampling in a development build and `axis-memlab symbolize` to rank call sites by live bytes; off-camera sanitizer or heap profiling with a replay of the workload (`docs/12`, sections 5-6) | Application team |
-| Growth in shared/DMA buffers tied to VDO/Larod calls | Minimal reproducer against the exact SDK generation; compare with the vendor's documented buffer lifetime | Application team, then vendor |
-| System memory falls, process flat, analytics-dependent | Vendor-supported inspection of other services and drivers (M0005); firmware A/B | Vendor |
-| Platform regression across firmware | Evidence bundle of the paired runs and manifests | Vendor |
+| Remainder                                                 | Next step                                                                                                                                                                                               | Owner                         |
+|-----------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
+| Growth only in application private memory, source unclear | Allocation sampling in a development build and `axis-memlab symbolize` to rank call sites by live bytes; off-camera sanitizer or heap profiling with a replay of the workload (`docs/12`, sections 5-6) | Application team              |
+| Growth in shared/DMA buffers tied to VDO/Larod calls      | Minimal reproducer against the exact SDK generation; compare with the vendor's documented buffer lifetime                                                                                               | Application team, then vendor |
+| System memory falls, process flat, analytics-dependent    | Vendor-supported inspection of other services and drivers (M0005); firmware A/B                                                                                                                         | Vendor                        |
+| Platform regression across firmware                       | Evidence bundle of the paired runs and manifests                                                                                                                                                        | Vendor                        |
 
 Build the bundle with `axis-memlab bundle` (`docs/09-customer-escalation.md`): manifest,
 analysis, capability and error records, limitations, optional allocation report, evidence,
@@ -354,17 +354,17 @@ You can rehearse the whole flow on the virtual board (`docs/device-optional/READ
 
 ## 12. Quick reference: observation → action
 
-| You see | Do next |
-| --- | --- |
-| Post-warm-up window too short | Extend the run; do not interpret |
-| Process flat, system falling | Stage 3 G2b: compare T1/T0, other processes, cache/shared |
-| Anon RSS and PSS rising, no counters | Stage 5 with `COUNTERS`: queues and in-flight counts |
-| In-flight count rising with frames | Hook audit of release paths (all exit paths) |
-| In-flight flat, anon RSS rising | `LEDGER` bytes + allocator stats; allocator experiment |
-| Growth per reconnect only | T4 cycle test with counters before/after each cycle |
-| Plateau after warm-up | Verify bound with longer T6 and heavier T3 before closing |
-| Ledger degraded or unmatched releases | Fix hook placement; discard that run's in-flight numbers |
-| Result differs between repetitions | Fix uncontrolled variables; do not average away a disagreement |
+| You see                               | Do next                                                        |
+|---------------------------------------|----------------------------------------------------------------|
+| Post-warm-up window too short         | Extend the run; do not interpret                               |
+| Process flat, system falling          | Stage 3 G2b: compare T1/T0, other processes, cache/shared      |
+| Anon RSS and PSS rising, no counters  | Stage 5 with `COUNTERS`: queues and in-flight counts           |
+| In-flight count rising with frames    | Hook audit of release paths (all exit paths)                   |
+| In-flight flat, anon RSS rising       | `LEDGER` bytes + allocator stats; allocator experiment         |
+| Growth per reconnect only             | T4 cycle test with counters before/after each cycle            |
+| Plateau after warm-up                 | Verify bound with longer T6 and heavier T3 before closing      |
+| Ledger degraded or unmatched releases | Fix hook placement; discard that run's in-flight numbers       |
+| Result differs between repetitions    | Fix uncontrolled variables; do not average away a disagreement |
 
 ## 13. Worked example (synthetic, runnable)
 

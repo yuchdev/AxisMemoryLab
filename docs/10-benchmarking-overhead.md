@@ -10,15 +10,15 @@ needs a control without it. On the smallest authorized device, compare an uninst
 build with `AXMEM_COUNTERS` and `AXMEM_LEDGER` builds under the same workload (same
 firmware, scene, codec, resolution, frame rate):
 
-| Quantity | How |
-| --- | --- |
-| Pipeline throughput and latency | Frames per second and per-stage timings against the uninstrumented build, over at least two repetitions |
-| CPU | Process CPU time per frame or per minute (`/proc/PID/stat` utime+stime) |
-| Peak and steady RSS added | `process.rss_anon_bytes` after warm-up in each build; goal for counter-only mode is under 1 MiB added (a design goal, not a result) |
-| Snapshot cost | `app.probe.snapshot_duration_ns`, and the added cost when `include_smaps_rollup` is on (page-table scan) |
-| Output volume | `app.probe.output_bytes` per hour at the chosen interval |
-| Collector cost (M0001) | SSH login and read cost per sample, a single multi-read command against a persistent connection, network bytes |
-| `smaps_rollup` scan cost | Time per read on the device, to set the sparse interval |
+| Quantity                        | How                                                                                                                                 |
+|---------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| Pipeline throughput and latency | Frames per second and per-stage timings against the uninstrumented build, over at least two repetitions                             |
+| CPU                             | Process CPU time per frame or per minute (`/proc/PID/stat` utime+stime)                                                             |
+| Peak and steady RSS added       | `process.rss_anon_bytes` after warm-up in each build; goal for counter-only mode is under 1 MiB added (a design goal, not a result) |
+| Snapshot cost                   | `app.probe.snapshot_duration_ns`, and the added cost when `include_smaps_rollup` is on (page-table scan)                            |
+| Output volume                   | `app.probe.output_bytes` per hour at the chosen interval                                                                            |
+| Collector cost (M0001)          | SSH login and read cost per sample, a single multi-read command against a persistent connection, network bytes                      |
+| `smaps_rollup` scan cost        | Time per read on the device, to set the sparse interval                                                                             |
 
 Report the memory trend with and without the probe: if the slope changes, say so, and use
 the lighter mode for the main runs.
@@ -36,13 +36,13 @@ Release, 2,000,000 operations per thread. Single run each; the 4-thread rows inc
 cache-line contention on shared counters by design and are noisy. Treat them as order of
 magnitude only.
 
-| Operation | COUNTERS, 1 thread (ns) | LEDGER, 1 thread (ns) | COUNTERS, 4 threads (ns) | LEDGER, 4 threads (ns) |
-| --- | ---: | ---: | ---: | ---: |
-| empty loop (baseline) | 1.0 | 1.4 | 13.8 | 40.2 |
-| `counter.add()` by handle | 9.7 | 11.2 | 92.0 | 88.4 |
-| `axmem_counter_add("name")` by name | 113.4 | 98.9 | 129.3 | 138.2 |
-| `gauge.set()` by handle | 5.2 | 4.3 | 9.6 | 11.3 |
-| `acquire` + `release` | 33.3 | 205.5 | 124.2 | 588.8 |
+| Operation                           | COUNTERS, 1 thread (ns) | LEDGER, 1 thread (ns) | COUNTERS, 4 threads (ns) | LEDGER, 4 threads (ns) |
+|-------------------------------------|------------------------:|----------------------:|-------------------------:|-----------------------:|
+| empty loop (baseline)               |                     1.0 |                   1.4 |                     13.8 |                   40.2 |
+| `counter.add()` by handle           |                     9.7 |                  11.2 |                     92.0 |                   88.4 |
+| `axmem_counter_add("name")` by name |                   113.4 |                  98.9 |                    129.3 |                  138.2 |
+| `gauge.set()` by handle             |                     5.2 |                   4.3 |                      9.6 |                   11.3 |
+| `acquire` + `release`               |                    33.3 |                 205.5 |                    124.2 |                  588.8 |
 
 What this does and does not show:
 

@@ -123,7 +123,7 @@ Rules the gate enforces (`src/axis_memlab/advanced/evidence.py`):
   sites or C++ object types, and a PID on such an event is **not** proof that the process owns the
   pages long-term, especially for device and shared buffers. For userspace heap stacks use the
   sampler, not kernel tracing.
-* **Prerequisite:** tracefs mounted, privilege, and (for eBPF) a kernel with BPF and a toolchain.
+* **Prerequisite:** `tracefs` mounted, privilege, and (for eBPF) a kernel with BPF and a toolchain.
   Restricted AXIS OS 12 accounts are expected not to qualify; a vendor-approved lab image may.
 * **Procedure:** only on a vendor-approved lab image, following the vendor's guide, for a short
   window with filters on the one PID. Record in the evidence entry what was and was not possible.
@@ -133,8 +133,8 @@ Rules the gate enforces (`src/axis_memlab/advanced/evidence.py`):
 * **`slabinfo`:** `/proc/slabinfo` lists kernel cache sizes. Usually root-only. Tells you *which
   kernel cache* grows, never which userspace code caused it. Pairs with the `H-KERNEL-SLAB`
   hypothesis (`system.mem.slab_unreclaim_bytes` rising while the process is flat).
-* **`dmabuf_debugfs`:** where debugfs exposes DMA-BUF accounting (for example under
-  `/sys/kernel/debug/dma_buf/`), it lists exported buffers, sizes, and holders. Requires debugfs
+* **`dmabuf_debugfs`:** where `debugfs` exposes DMA-BUF accounting (for example under
+  `/sys/kernel/debug/dma_buf/`), it lists exported buffers, sizes, and holders. Requires `debugfs`
   mounted (a device change) and privilege. Pairs with `H-SHARED-BUFFERS` and `H-DMABUF-HANDLES`.
   Buffers that are not exported through dma-buf do not appear.
 * Both are read-only once available, but they walk kernel structures and need privilege that
@@ -166,19 +166,19 @@ pressure. What would have to be true to enable it later is listed there.
 When the collected data contains the relevant series (`docs/03-metrics-semantics.md`), `analyze`
 evaluates, per segment and after warm-up, with the usual caveats:
 
-| Rule | Needs | Says | Does not say |
-| --- | --- | --- | --- |
-| `H-SHARED-BUFFERS` | `system.mem.shmem_bytes` and (`process.rss_shmem_bytes` or `process.fd_dmabuf_count`) rising | Shared/video-buffer memory is rising with the process's shared pages or DMA handles | Who owns the buffers, or that they leak |
-| `H-DMABUF-HANDLES` | `process.fd_dmabuf_count` rising, anonymous memory not | The number of open DMA-buffer descriptors is rising | That the handles are never closed |
-| `H-KERNEL-SLAB` | `system.mem.slab_unreclaim_bytes` rising, process known flat | Kernel slab is rising while the process is not; allocator and owner unconfirmed | A kernel leak |
-| `H-CGROUP-CHARGE` | `process.cgroup_memory_current_bytes` rising, anonymous memory known flat | The cgroup charge rises without process anonymous growth | What is charged (page cache, other members, kernel memory) |
+| Rule               | Needs                                                                                        | Says                                                                                | Does not say                                               |
+|--------------------|----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|------------------------------------------------------------|
+| `H-SHARED-BUFFERS` | `system.mem.shmem_bytes` and (`process.rss_shmem_bytes` or `process.fd_dmabuf_count`) rising | Shared/video-buffer memory is rising with the process's shared pages or DMA handles | Who owns the buffers, or that they leak                    |
+| `H-DMABUF-HANDLES` | `process.fd_dmabuf_count` rising, anonymous memory not                                       | The number of open DMA-buffer descriptors is rising                                 | That the handles are never closed                          |
+| `H-KERNEL-SLAB`    | `system.mem.slab_unreclaim_bytes` rising, process known flat                                 | Kernel slab is rising while the process is not; allocator and owner unconfirmed     | A kernel leak                                              |
+| `H-CGROUP-CHARGE`  | `process.cgroup_memory_current_bytes` rising, anonymous memory known flat                    | The cgroup charge rises without process anonymous growth                            | What is charged (page cache, other members, kernel memory) |
 
 A rule whose inputs are absent or unreadable is simply not evaluated; absence is not evidence of
 health. Each finding names the next comparison, and lab-only diagnostics are referred to the gate.
 
 ## 12. Unsupported and unverified, in one list
 
-* Which of `ptrace`, `perf_event`, tracefs, debugfs, BPF, and root-only files are reachable on any
+* Which of `ptrace`, `perf_event`, `tracefs`, `debugfs`, BPF, and root-only files are reachable on any
   AXIS OS 12 build. **Unknown; each is a per-firmware evidence entry.**
 * The DDH payload shapes and update rates.
 * Whether the server report can be obtained in a text form without manual extraction.

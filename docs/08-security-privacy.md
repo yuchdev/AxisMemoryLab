@@ -6,7 +6,7 @@ process arguments, keep artifacts local, and exclude raw sensitive input.
 Secrets must never be logged. Configuration is parsed locally with no shell
 expansion, external includes, environment interpolation, network, or subprocess.
 
-Future collection requires least privilege, explicit user authorization,
+Future collection requires the least privilege, explicit user authorization,
 bounded snapshots and buffers, retention controls, and secure archive handling.
 The scaffold defaults deny root, mutation, ptrace, deep snapshots, image data,
 plate text, and camera-flash writes.
@@ -41,7 +41,7 @@ plate text, and camera-flash writes.
   none of them and never enables Developer Mode or changes device settings.
 * Deep captures remain blocked (`docs/decisions/0003-advanced-diagnostics.md`); the evidence
   bundle has no option for core dumps.
-* Bundles are minimised, scanned for identifying text, and refused rather than leaked; sensitive
+* Bundles are minimized, scanned for identifying text, and refused rather than leaked; sensitive
   runs need a review confirmation; `--verify` detects later changes. Redaction is best-effort and
   a person must read the result.
 * The virtual-board guide (`docs/device-optional/`) creates a locked-password, key-only,
