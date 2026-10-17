@@ -2,15 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "axis-memory-lab:alloc-samples-v1",
   "title": "Axis Memory Lab allocation sample line v1 (provisional)",
-  "description": "One line of an allocation-samples JSON Lines file written by the in-app sampler. Addresses are raw program counters; nothing is symbolized on the device.",
+  "description": "One line of an allocation-samples JSON Lines file written by the in-app sampler. Addresses are raw program counters; nothing is symbolized on the device",
   "$defs": {
     "hex": {"type": "string", "pattern": "^0x[0-9a-f]{1,16}$"},
     "module": {
       "type": "object",
       "required": ["name", "build_id", "base", "size"],
       "properties": {
-        "name": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9._+-]+$", "description": "File base name only; no directories."},
-        "build_id": {"type": "string", "pattern": "^[0-9a-f]*$", "description": "Empty when the binary carries none."},
+        "name": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9._+-]+$", "description": "File base name only; no directories"},
+        "build_id": {"type": "string", "pattern": "^[0-9a-f]*$", "description": "Empty when the binary carries none"},
         "base": {"$ref": "#/$defs/hex"},
         "size": {"$ref": "#/$defs/hex"}
       },
@@ -64,7 +64,7 @@
         "align": {"type": "integer", "minimum": 0},
         "kind": {"enum": ["new", "new[]", "new_nothrow", "new[]_nothrow", "new_aligned", "new[]_aligned", "new_aligned_nothrow", "new[]_aligned_nothrow", "manual"]},
         "thread": {"type": "integer", "minimum": 0},
-        "weight_count": {"type": "number", "minimum": 1, "description": "1 / P(sampled): how many allocations of this size this sample stands for."},
+        "weight_count": {"type": "number", "minimum": 1, "description": "1 / P(sampled): how many allocations of this size this sample stands for"},
         "stack": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/hex"}}
       },
       "additionalProperties": false
@@ -89,7 +89,7 @@
         "final": {"type": "boolean"},
         "ts_mono_ns": {"type": "integer", "minimum": 0},
         "alloc_requests": {"type": "integer", "minimum": 0},
-        "alloc_request_bytes": {"type": "integer", "minimum": 0, "description": "Exact cumulative requested bytes. Not live memory."},
+        "alloc_request_bytes": {"type": "integer", "minimum": 0, "description": "Exact cumulative requested bytes. Not live memory"},
         "free_requests": {"type": "integer", "minimum": 0},
         "samples_taken": {"type": "integer", "minimum": 0},
         "frees_matched": {"type": "integer", "minimum": 0},

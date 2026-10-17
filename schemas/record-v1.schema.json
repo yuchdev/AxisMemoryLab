@@ -43,7 +43,7 @@
       "type": "object",
       "required": ["device_id"],
       "properties": {
-        "device_id": {"type": "string", "minLength": 1, "description": "Pseudonymous identity; never a serial number or address."},
+        "device_id": {"type": "string", "minLength": 1, "description": "Pseudonymous identity; never a serial number or address"},
         "pid": {"type": "integer", "minimum": 1},
         "process_start_ticks": {"type": "integer", "minimum": 0},
         "boot_id": {"type": "string", "minLength": 1}
