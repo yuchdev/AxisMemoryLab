@@ -5,11 +5,8 @@ project(axis_memlab_native LANGUAGES C CXX)
 option(AXMEM_DISABLED "Header-only no-op API (no data, no I/O)" OFF)
 option(AXMEM_COUNTERS "Relaxed-atomic counters, resource totals, JSONL snapshots" OFF)
 option(AXMEM_LEDGER "COUNTERS plus fixed-capacity identity ledger (development use)" OFF)
-option(AXMEM_SAMPLER "Allocation sampling (milestone 0004; not implemented)" OFF)
+option(AXMEM_SAMPLER "Add-on: statistical allocation sampler (needs COUNTERS or LEDGER)" OFF)
 
-if(AXMEM_SAMPLER)
-  message(FATAL_ERROR "AXMEM_SAMPLER is owned by milestone 0004 and is not implemented")
-endif()
 set(_axmem_selected 0)
 foreach(mode AXMEM_DISABLED AXMEM_COUNTERS AXMEM_LEDGER)
   if(${mode})
@@ -17,6 +14,9 @@ foreach(mode AXMEM_DISABLED AXMEM_COUNTERS AXMEM_LEDGER)
     set(AXMEM_MODE_NAME ${mode})
   endif()
 endforeach()
+if(AXMEM_SAMPLER AND AXMEM_DISABLED)
+  message(FATAL_ERROR "AXMEM_SAMPLER is an add-on to AXMEM_COUNTERS or AXMEM_LEDGER, not to AXMEM_DISABLED")
+endif()
 if(NOT _axmem_selected EQUAL 1)
   message(FATAL_ERROR
     "Select exactly one of -DAXMEM_DISABLED=ON, -DAXMEM_COUNTERS=ON, -DAXMEM_LEDGER=ON "
@@ -53,6 +53,41 @@ else()
   target_include_directories(axis_memlab_probe PUBLIC include)
   target_compile_definitions(axis_memlab_probe PUBLIC ${AXMEM_MODE_NAME}=1)
   target_link_libraries(axis_memlab_probe PUBLIC Threads::Threads)
+
+  # Flags that make a profiled build usable by the sampler: symbols for offline resolution and
+  # frame pointers so the stack can be walked without allocating. Link this into targets whose
+  # call sites should be attributable.
+  add_library(axis_memlab_sampler_flags INTERFACE)
+  if(NOT MSVC)
+    target_compile_options(axis_memlab_sampler_flags INTERFACE -g -fno-omit-frame-pointer)
+  endif()
+
+  if(AXMEM_SAMPLER)
+    target_sources(axis_memlab_probe PRIVATE src/sampler.cpp src/stack.cpp src/modules.cpp)
+    target_compile_definitions(axis_memlab_probe PUBLIC AXMEM_SAMPLER=1)
+    if(WIN32)
+      target_link_libraries(axis_memlab_probe PUBLIC psapi)
+    endif()
+
+    # Replaces the global operator new / delete. Link it into an executable (not a late-loaded
+    # shared library) to sample C++ allocations: target_link_libraries(app PRIVATE axis_memlab_new_hook)
+    add_library(axis_memlab_new_hook OBJECT src/new_hook.cpp)
+    target_include_directories(axis_memlab_new_hook PRIVATE src include)
+    target_compile_definitions(axis_memlab_new_hook PUBLIC AXMEM_SAMPLER=1)
+    if(NOT MSVC)
+      target_compile_options(axis_memlab_new_hook PRIVATE -fno-omit-frame-pointer)
+    endif()
+    target_link_libraries(axis_memlab_new_hook PUBLIC axis_memlab_probe)
+
+    add_executable(axis_memlab_sampler_demo examples/sampler_demo.cpp)
+    target_link_libraries(axis_memlab_sampler_demo PRIVATE axis_memlab_probe axis_memlab_new_hook
+                          axis_memlab_sampler_flags)
+
+    add_executable(axis_memlab_sampler_bench examples/sampler_bench.cpp)
+    target_link_libraries(axis_memlab_sampler_bench PRIVATE axis_memlab_probe axis_memlab_new_hook)
+    add_executable(axis_memlab_alloc_baseline_bench examples/sampler_bench.cpp)
+    target_compile_definitions(axis_memlab_alloc_baseline_bench PRIVATE AXMEM_BENCH_BASELINE=1)
+  endif()
 
   add_executable(axis_memlab_lifecycle_simulator examples/lifecycle_simulator.cpp)
   target_link_libraries(axis_memlab_lifecycle_simulator PRIVATE axis_memlab_probe)

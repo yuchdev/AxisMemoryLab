@@ -55,3 +55,12 @@ unreadable values are `{available:false, reason}`, never zero. See
   `collector_version`. The manifest `status` is the only field that changes after creation.
 - **Freezing.** Schema version 1 is now used by three producers (collector, probe,
   importer). Changes are additive; a breaking change needs `schema_version` 2.
+
+## Allocation samples (M0004)
+
+The sampler writes a separate JSON Lines file, `alloc-samples-v1`
+(`schemas/alloc-samples-v1.schema.json`): `header`, `modules`, `alloc`, `free`, and `summary`
+records, with raw program counters, module base names and build-ids, and statistical weights.
+It is not part of `records.jsonl`; `axis-memlab symbolize` turns it into a `report-v1`
+document (`allocation_summary` and `allocation_site` findings). Format and semantics:
+`docs/12-allocation-sampling.md`.

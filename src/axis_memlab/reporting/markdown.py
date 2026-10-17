@@ -129,6 +129,55 @@ def render_markdown(doc: dict[str, Any]) -> str:
                 for c in comps
             ],
         )
+    for summary in by_type(doc, "allocation_summary"):
+        cal = summary["calibration"]
+        out += ["## Allocation summary", ""]
+        out.append(
+            f"- Session {summary['session']}: {summary['samples']} samples at a mean interval of "
+            f"{summary['sample_interval_bytes']} bytes ({summary['unwinder']}, {summary['arch']})"
+        )
+        out.append(
+            f"- Estimated live: {_cell(summary['estimated_live_bytes'])} bytes from "
+            f"{summary['sampled_live']} sampled live allocations"
+        )
+        out.append(
+            f"- Estimated cumulative (all ever allocated, NOT live): "
+            f"{_cell(summary['estimated_cumulative_bytes'])} bytes"
+        )
+        if cal["exact_requested_bytes"] is not None:
+            out.append(
+                f"- Exact cumulative requested: {_cell(cal['exact_requested_bytes'])} bytes "
+                f"(estimate / exact = {_cell(cal['ratio'])})"
+            )
+        out.append(f"- Unresolved frames: {summary['unresolved_frames']}")
+        out.append("")
+    sites = by_type(doc, "allocation_site")
+    if sites:
+        out += [f"## Allocation sites (ranked by {sites[0]['ranked_by']})", ""]
+        rows = []
+        for site in sites:
+            top = " <- ".join(f["label"] for f in site["frames"][:4]) or "<no stack>"
+            rows.append(
+                [
+                    _cell(site["rank"]),
+                    _cell(site["estimated_live_bytes"]),
+                    f"{site['sampled_live']} ({site['confidence_live']})",
+                    _cell(site["estimated_cumulative_bytes"]),
+                    f"{site['sampled_allocs']} ({site['confidence_cumulative']})",
+                    _cell(top),
+                ]
+            )
+        out += _table(
+            [
+                "rank",
+                "live est. bytes",
+                "live samples",
+                "cumulative est. bytes (not live)",
+                "samples",
+                "call site (innermost first)",
+            ],
+            rows,
+        )
     cors = by_type(doc, "correlation")
     if cors:
         out += ["## Correlations", ""]

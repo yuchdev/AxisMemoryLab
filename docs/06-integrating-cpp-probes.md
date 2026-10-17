@@ -11,14 +11,14 @@ objects are owned, opens no network connection, and starts no thread.
 
 ## 1. Build modes
 
-Select exactly one per build (none, several, or the sampler is a configure error):
+Select exactly one base mode per build (none or several is a configure error); `AXMEM_SAMPLER` may be added to COUNTERS or LEDGER:
 
 | Option | What you get | Hot-path cost |
 | --- | --- | --- |
 | `-DAXMEM_DISABLED=ON` | Inline no-ops; nothing to link; `axmem_emit_snapshot()` returns `AXMEM_STATUS_DISABLED` | none |
 | `-DAXMEM_COUNTERS=ON` | Counters, gauges, per-kind acquired/released/in-flight **counts**, snapshots | relaxed atomics, no lock |
 | `-DAXMEM_LEDGER=ON` | `COUNTERS` plus an identity ledger: exact in-flight **bytes**, high-water mark, duplicate and unmatched detection, oldest live ids | one mutex per acquire/release |
-| `AXMEM_SAMPLER` | Allocation sampling (milestone 0004) | not available |
+| `AXMEM_SAMPLER=ON` (add-on) | Statistical allocation sampling and the opt-in `operator new` hook; needs COUNTERS or LEDGER, refused with DISABLED. See `docs/12-allocation-sampling.md` | sampled events only; development builds |
 
 ```bash
 cmake -S native -B build/native -DAXMEM_LEDGER=ON
@@ -142,7 +142,7 @@ belong to the application; the probe only reports their effect.
 `malloc_trim(0)`, and allocator swaps are development-only experiments run by the
 application owner on a lab unit: a trim that lowers RSS suggests allocator retention, not
 the absence of a leak, and it can perturb the workload. The library deliberately offers no
-trim call. Allocation sampling is milestone 0004.
+trim call. For call-site attribution of allocations use the sampler (`docs/12-allocation-sampling.md`).
 
 ## 8. Limits and known gaps
 

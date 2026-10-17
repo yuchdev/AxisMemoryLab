@@ -112,7 +112,9 @@ def test_markdown_html_csv_renderers(run_dir: Path, tmp_path: Path) -> None:
     assert rows[0]["phase"].startswith("'=")
 
 
-def test_planned_commands_are_the_remaining_ones() -> None:
-    from axis_memlab.cli import _PLANNED
+def test_no_command_is_left_as_a_placeholder() -> None:
+    from axis_memlab.cli import _PLANNED, build_parser
 
-    assert set(_PLANNED) == {"symbolize"}
+    assert _PLANNED == {}  # every command now does what it says; M0005 may add planned ones
+    help_text = build_parser().format_help()
+    assert "symbolize" in help_text and "discover" in help_text

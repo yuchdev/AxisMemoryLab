@@ -116,3 +116,18 @@ Notes:
 
 A matching total of acquires and releases is necessary but not sufficient evidence of no
 leak: resources can be mis-sized or have their ownership transferred.
+
+### Sampler health (`AXMEM_SAMPLER`, only while the sampler runs)
+
+| Name | Unit | Meaning |
+| --- | --- | --- |
+| `app.sampler.alloc_requests_count` | count | Exact number of allocation requests seen since `axmem_sampler_start` |
+| `app.sampler.alloc_requested_total_bytes` | bytes | Exact **cumulative** requested bytes, not live memory |
+| `app.sampler.free_requests_count` | count | Exact number of frees seen |
+| `app.sampler.samples_taken_count`, `live_samples_count` | count | Tracked samples taken, and those not yet freed |
+| `app.sampler.dropped_samples_count` | count | Samples not recorded (full table or ring) |
+| `app.sampler.dropped_free_events_count` | count | Free events lost; live estimates may overstate |
+| `app.sampler.stack_failures_count` | count | Samples with an empty stack |
+
+Sampled allocation records themselves (`alloc-samples-v1`) are a separate file; see
+`docs/12-allocation-sampling.md`.

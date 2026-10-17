@@ -42,7 +42,7 @@ escalate with a reproducible case.
 | `axis-memlab analyze / compare / report` | implemented (M0002), synthetic-validated | Stages 3, 4, 7 |
 | C++ probe, `COUNTERS` and `LEDGER` modes | implemented (M0003), host-tested, **not yet run on a camera** | Stage 5 |
 | `discover`, `collect`, `annotate`, `snapshot`, `import`, `purge` | implemented (M0001), fixture-tested, **not yet run on a camera** | Stages 1, 2, 5 |
-| Allocation sampling, symbolization, sanitizers, heap-profiler replay | not implemented (M0004) | Stage 8 (escalation) |
+| Allocation sampling (`AXMEM_SAMPLER`) and `axis-memlab symbolize`; sanitizer and heap-profiler replay instructions | implemented (M0004), host-tested; not run on a camera | Stage 8 (escalation); `docs/12-allocation-sampling.md` |
 | Vendor-assisted kernel/driver inspection (`gdbserver`, `strace`, `perf`, slab/DMA-BUF), device server report | not implemented (M0005) | Stage 8 (escalation) |
 
 Every tool and technique in the tech notes has an owner; see
@@ -339,7 +339,7 @@ Escalate only when S6 leaves a remainder the application does not own.
 
 | Remainder | Next step | Owner |
 | --- | --- | --- |
-| Growth only in application private memory, source unclear | Off-camera sanitizer or heap profiling with a replay of the workload; allocation sampling (M0004) | Application team |
+| Growth only in application private memory, source unclear | Allocation sampling in a development build and `axis-memlab symbolize` to rank call sites by live bytes; off-camera sanitizer or heap profiling with a replay of the workload (`docs/12`, sections 5-6) | Application team |
 | Growth in shared/DMA buffers tied to VDO/Larod calls | Minimal reproducer against the exact SDK generation; compare with the vendor's documented buffer lifetime | Application team, then vendor |
 | System memory falls, process flat, analytics-dependent | Vendor-supported inspection of other services and drivers (M0005); firmware A/B | Vendor |
 | Platform regression across firmware | Evidence bundle of the paired runs and manifests | Vendor |

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "axis-memory-lab:alloc-samples-v1",
+  "title": "Axis Memory Lab allocation sample line v1 (provisional)",
+  "description": "One line of an allocation-samples JSON Lines file written by the in-app sampler. Addresses are raw program counters; nothing is symbolized on the device.",
+  "$defs": {
+    "hex": {"type": "string", "pattern": "^0x[0-9a-f]{1,16}$"},
+    "module": {
+      "type": "object",
+      "required": ["name", "build_id", "base", "size"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "pattern": "^[A-Za-z0-9._+-]+$", "description": "File base name only; no directories."},
+        "build_id": {"type": "string", "pattern": "^[0-9a-f]*$", "description": "Empty when the binary carries none."},
+        "base": {"$ref": "#/$defs/hex"},
+        "size": {"$ref": "#/$defs/hex"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "title": "header",
+      "type": "object",
+      "required": ["schema", "type", "run_id", "device_id", "pid", "ts_utc_ns", "ts_mono_ns", "sample_interval_bytes", "max_stack_depth", "pointer_bits", "arch", "unwinder", "modules"],
+      "properties": {
+        "schema": {"const": "alloc-samples-v1"},
+        "type": {"const": "header"},
+        "run_id": {"type": "string", "format": "uuid"},
+        "device_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,64}$"},
+        "pid": {"type": "integer", "minimum": 0},
+        "process_start_ticks": {"type": "integer", "minimum": 0},
+        "boot_id": {"type": "string", "minLength": 1},
+        "ts_utc_ns": {"type": "integer", "minimum": 0},
+        "ts_mono_ns": {"type": "integer", "minimum": 0},
+        "sample_interval_bytes": {"type": "integer", "minimum": 1},
+        "max_stack_depth": {"type": "integer", "minimum": 1, "maximum": 32},
+        "pointer_bits": {"enum": [32, 64]},
+        "arch": {"enum": ["x86_64", "aarch64", "arm", "x86", "other"]},
+        "unwinder": {"enum": ["frame_pointer", "capture_stack_back_trace", "caller_only"]},
+        "modules": {"type": "array", "items": {"$ref": "#/$defs/module"}}
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "modules",
+      "type": "object",
+      "required": ["type", "ts_mono_ns", "modules"],
+      "properties": {
+        "type": {"const": "modules"},
+        "ts_mono_ns": {"type": "integer", "minimum": 0},
+        "modules": {"type": "array", "items": {"$ref": "#/$defs/module"}}
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "alloc",
+      "type": "object",
+      "required": ["type", "id", "ts_mono_ns", "size", "align", "kind", "thread", "weight_count", "stack"],
+      "properties": {
+        "type": {"const": "alloc"},
+        "id": {"type": "integer", "minimum": 1},
+        "ts_mono_ns": {"type": "integer", "minimum": 0},
+        "size": {"type": "integer", "minimum": 0},
+        "align": {"type": "integer", "minimum": 0},
+        "kind": {"enum": ["new", "new[]", "new_nothrow", "new[]_nothrow", "new_aligned", "new[]_aligned", "new_aligned_nothrow", "new[]_aligned_nothrow", "manual"]},
+        "thread": {"type": "integer", "minimum": 0},
+        "weight_count": {"type": "number", "minimum": 1, "description": "1 / P(sampled): how many allocations of this size this sample stands for."},
+        "stack": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/hex"}}
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "free",
+      "type": "object",
+      "required": ["type", "id", "ts_mono_ns"],
+      "properties": {
+        "type": {"const": "free"},
+        "id": {"type": "integer", "minimum": 1},
+        "ts_mono_ns": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "summary",
+      "type": "object",
+      "required": ["type", "final", "ts_mono_ns", "alloc_requests", "alloc_request_bytes", "free_requests", "samples_taken", "frees_matched", "live_samples", "dropped_table_full", "dropped_ring_full", "dropped_free_events", "dropped_output_cap", "stack_failures", "sample_interval_bytes"],
+      "properties": {
+        "type": {"const": "summary"},
+        "final": {"type": "boolean"},
+        "ts_mono_ns": {"type": "integer", "minimum": 0},
+        "alloc_requests": {"type": "integer", "minimum": 0},
+        "alloc_request_bytes": {"type": "integer", "minimum": 0, "description": "Exact cumulative requested bytes. Not live memory."},
+        "free_requests": {"type": "integer", "minimum": 0},
+        "samples_taken": {"type": "integer", "minimum": 0},
+        "frees_matched": {"type": "integer", "minimum": 0},
+        "live_samples": {"type": "integer", "minimum": 0},
+        "dropped_table_full": {"type": "integer", "minimum": 0},
+        "dropped_ring_full": {"type": "integer", "minimum": 0},
+        "dropped_free_events": {"type": "integer", "minimum": 0},
+        "dropped_output_cap": {"type": "integer", "minimum": 0},
+        "stack_failures": {"type": "integer", "minimum": 0},
+        "sample_interval_bytes": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    }
+  ]
+}

@@ -8,7 +8,8 @@
  *   AXMEM_DISABLED=1  inline no-ops, header only, nothing to link;
  *   AXMEM_COUNTERS=1  relaxed-atomic counters/gauges, per-kind resource totals, snapshots;
  *   AXMEM_LEDGER=1    COUNTERS plus a fixed-capacity identity ledger (development use).
- * AXMEM_SAMPLER (allocation sampling) belongs to milestone 0004 and is not available.
+ * AXMEM_SAMPLER=1 (milestone 0004) adds statistical allocation sampling on top of COUNTERS or
+ * LEDGER; its API is in axis_memlab/sampler.h.
  *
  * Hot-path calls (counter/gauge by handle, resource acquire/release) perform no I/O, no
  * allocation, and take no lock in COUNTERS mode. axmem_init, axmem_phase_marker, and
@@ -37,7 +38,12 @@
 #error "Define exactly one of AXMEM_DISABLED=1, AXMEM_COUNTERS=1, AXMEM_LEDGER=1"
 #endif
 #if defined(AXMEM_SAMPLER) && AXMEM_SAMPLER == 1
-#error "AXMEM_SAMPLER is owned by milestone 0004 and is not implemented"
+#define AXMEM_SAMPLER_ 1
+#if AXMEM_MODE_DISABLED_
+#error "AXMEM_SAMPLER is an add-on to AXMEM_COUNTERS or AXMEM_LEDGER, not to AXMEM_DISABLED"
+#endif
+#else
+#define AXMEM_SAMPLER_ 0
 #endif
 
 #define AXMEM_ABI_VERSION 2

@@ -14,6 +14,10 @@
 
 #include "self_proc.hpp"
 
+#if AXMEM_SAMPLER_
+#include "sampler_core.hpp"
+#endif
+
 #if defined(_WIN32)
 #include <process.h>
 #define AXMEM_GETPID() static_cast<uint64_t>(_getpid())
@@ -407,6 +411,26 @@ void append_allocator_metrics(MetricWriter &w) {
 #endif
 }
 
+#if AXMEM_SAMPLER_
+// Sampler health, so one snapshot shows allocation volume next to the process memory it explains.
+// Request/byte totals are CUMULATIVE (everything ever requested), not live memory.
+void append_sampler_metrics(MetricWriter &w) {
+  if (!axmem_internal::sampler_active()) return;
+  axmem_internal::SamplerCounters c;
+  axmem_internal::sampler_counters(c);
+  const char *src = "axmem_sampler";
+  w.value("app.sampler.alloc_requests_count", c.alloc_requests, "count", src);
+  w.value("app.sampler.alloc_requested_total_bytes", c.alloc_request_bytes, "bytes", src);
+  w.value("app.sampler.free_requests_count", c.free_requests, "count", src);
+  w.value("app.sampler.samples_taken_count", c.samples_taken, "count", src);
+  w.value("app.sampler.live_samples_count", c.live_samples, "count", src);
+  w.value("app.sampler.dropped_samples_count", c.dropped_table_full + c.dropped_ring_full, "count",
+          src);
+  w.value("app.sampler.dropped_free_events_count", c.dropped_free_events, "count", src);
+  w.value("app.sampler.stack_failures_count", c.stack_failures, "count", src);
+}
+#endif
+
 void append_kind_metrics(MetricWriter &w, std::string &annotations) {
   const uint32_t kinds = g_kind_count.load(std::memory_order_acquire);
   const std::string base = "app.resource.";
@@ -660,6 +684,9 @@ int axmem_emit_snapshot(void) {
   std::string annotations;
   append_kind_metrics(w, annotations);
   if (g_sink.allocator_stats) append_allocator_metrics(w);
+#if AXMEM_SAMPLER_
+  append_sampler_metrics(w);
+#endif
   const char *src = "axmem_probe";
   w.value("app.probe.metric_slots_used_count", used, "count", src);
   w.value("app.probe.snapshots_emitted_count", g_snapshots_emitted.load(kRlx), "count", src);

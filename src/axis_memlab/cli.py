@@ -16,6 +16,7 @@ from axis_memlab.analysis.engine import analyze_run, build_report
 from axis_memlab.analysis.load import load_run
 from axis_memlab.analysis.settings import AnalysisSettings
 from axis_memlab.cli_device import DEVICE_COMMANDS, add_device_commands, run_device_command
+from axis_memlab.cli_symbolize import add_symbolize_command, run_symbolize
 from axis_memlab.config import load_config
 from axis_memlab.errors import ConfigError, RunDataError
 from axis_memlab.reporting import load_report
@@ -23,9 +24,7 @@ from axis_memlab.reporting.csv import render_csv
 from axis_memlab.reporting.html import render_html
 from axis_memlab.reporting.markdown import render_markdown
 
-_PLANNED = {
-    "symbolize": "0004",
-}
+_PLANNED: dict[str, str] = {}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -59,6 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--format", required=True, choices=("markdown", "html", "csv"))
     report.add_argument("--out", type=Path, help="write here (must not exist) instead of stdout")
     add_device_commands(commands)
+    add_symbolize_command(commands)
     for name, milestone in _PLANNED.items():
         planned = commands.add_parser(name, help=f"planned for milestone {milestone}")
         planned.description = (
@@ -126,6 +126,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 4
         print(f"axis-memlab: configuration is valid: {args.file}")
         return 0
+    if args.command == "symbolize":
+        return run_symbolize(args)
     if args.command in DEVICE_COMMANDS:
         return run_device_command(args)
     if args.command in ("analyze", "compare", "report"):

@@ -11,12 +11,17 @@ permissions:
 jobs:
   native:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         compiler: [gcc, clang]
-        mode: [DISABLED, COUNTERS, LEDGER]
+        flags:
+          - "-DAXMEM_DISABLED=ON"
+          - "-DAXMEM_COUNTERS=ON"
+          - "-DAXMEM_LEDGER=ON"
+          - "-DAXMEM_COUNTERS=ON -DAXMEM_SAMPLER=ON"
+          - "-DAXMEM_LEDGER=ON -DAXMEM_SAMPLER=ON"
     steps:
       - uses: actions/checkout@v4
       - name: Select compiler
@@ -26,6 +31,6 @@ jobs:
             echo "CXX=clang++" >> "$GITHUB_ENV"
           fi
       - name: Configure
-        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug -DAXMEM_${{ matrix.mode }}=ON
+        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug ${{ matrix.flags }}
       - run: cmake --build build/native --parallel
       - run: ctest --test-dir build/native --output-on-failure

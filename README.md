@@ -19,7 +19,7 @@ collection and offline analysis. Neither has been run on a camera yet.
 | 0001      | Discovery, protocol refinement, safe collection           | Implemented; fixture only   |
 | 0002      | Trend analysis and reports                                | Implemented; synthetic only |
 | 0003      | In-application profiling                                  | Implemented; host-tested    |
-| 0004      | Allocation samples and symbolization                      | Planned                     |
+| 0004      | Allocation samples and symbolization                      | Implemented; host-tested    |
 | 0005      | Advanced AXIS diagnostics                                 | Planned                     |
 
 See the [roadmap](docs/roadmap/README.md), the [tech-notes coverage matrix](docs/roadmap/tech-notes-coverage.md),
@@ -76,6 +76,18 @@ installed or configured by the package itself.
 | Device facts | Camera model, SoC, AXIS OS version, application build and ACAP SDK generation, entered by you (`--camera-model`, `--soc`, `--firmware-version`, ...); the tool does not guess them |
 | Local disk | Space for the run archive (`records.jsonl` grows with duration; `--compress` and `purge` help). Runs are stored locally only |
 | A pseudonym policy | `--device-id` must be a label you chose; serial numbers, MAC and IP addresses are refused |
+
+**Allocation sampling and symbolization (`symbolize`, optional `AXMEM_SAMPLER`)**
+
+| Requirement | Detail |
+| --- | --- |
+| Nothing extra to read a sample file | `axis-memlab symbolize` is plain Python; it resolves ELF function names with its own reader |
+| Unstripped binaries off the camera | Build the profiled application with `-g -fno-omit-frame-pointer` and `-Wl,--build-id`; keep the unstripped binaries and libraries (or separated debug files) on the workstation. Symbols are matched to the device's modules by the build-id inside the file, never by name |
+| Optional: `llvm-symbolizer` or `addr2line` (binutils) | Adds source file and line and inlined frames; used only if found on `PATH` |
+| Optional: `c++filt` (binutils) | Demangles C++ names; without it names stay mangled and the report says so |
+| Development build only | The sampler replaces the global `operator new`; link `axis_memlab_new_hook` into the executable of a development build, never a production one |
+| Linux target for stacks and ELF symbols | Frame-pointer unwinding (x86-64, AArch64) and the ELF module table are Linux code paths; on other targets stacks are shallow or unresolved. PE (Windows) binaries are not symbolized |
+| Optional workstation replay tools | AddressSanitizer/LeakSanitizer (GCC or Clang), `heaptrack`, Valgrind (Massif, DHAT), for replaying a workload off the camera (`docs/12-allocation-sampling.md`, section 6); none is used by the repository itself |
 
 **In-application probe (`native/`)**
 
@@ -144,6 +156,18 @@ recommended order of use is in the [investigation workflow](docs/11-investigatio
   - *Effect:* separates "memory held by a queue", "buffers never released", and
     "allocator retention" when `/proc` alone cannot, and works when the SSH account cannot
     read the application's process.
+- **Allocation sampler and symbolizer** (`native/` `AXMEM_SAMPLER`, `axis-memlab symbolize`;
+  [guide](docs/12-allocation-sampling.md))
+  - A replacement for the global C++ `operator new`/`delete` that samples allocations by bytes,
+    records size, kind, thread, time and a bounded raw call stack for each sample, remembers
+    sampled allocations until they are freed, then performs the standard allocation. Statistical
+    weights make the totals unbiased; an exact cumulative counter calibrates them. Nothing is
+    symbolized on the device.
+  - On the host, `symbolize` maps program counters to functions (and files and lines when a tool
+    is available) strictly by build-id, ranks call sites by estimated **live** and **cumulative**
+    bytes with sample counts and confidence, and lists every limitation.
+  - *Effect:* turns "memory grows" into "these call sites requested the memory that is still
+    live", without a heap profiler on the camera.
 - **Offline analysis** (`axis-memlab analyze | compare | report`, `docs/07-offline-analysis.md`)
   - Splits a run at restarts and phase markers, computes warm-up-aware robust trends,
     normalizes growth per counter (frames, detections, reconnects), compares controlled
@@ -160,8 +184,8 @@ recommended order of use is in the [investigation workflow](docs/11-investigatio
   - *Effect:* nothing proposed is silently dropped; open items are explicit.
 - **Not yet available:** deep captures (`snapshot --level deep` is refused by the safety
   model), any measurement on a real device, differential `smaps` reports (0002), device
-  overhead numbers and real VDO/Larod adapters (0003), allocation sampling and
-  symbolization (0004), advanced AXIS diagnostics (0005).
+  overhead numbers and real VDO/Larod adapters (0003), PE/PDB symbolization and sampling of
+  `malloc`/`mmap` (0004), advanced AXIS diagnostics (0005).
 
 ## Limitations and safety
 
@@ -169,7 +193,8 @@ The JSON schemas and record types are provisional scaffold contracts; M0001
 owns protocol refinement. The native probe writes only to a local size-capped
 file chosen by the application; it opens no network connection and starts no
 thread. The host collector is read-only, allowlisted, and bounded; it never restarts
-the application or captures `deep` data. Symbolization is not implemented, and nothing
+the application or captures `deep` data. Allocation samples hold raw code addresses only and are resolved on the host, never on the
+device. Nothing
 has been measured on a camera. Do not add real credentials, customer identifiers, footage, or
 device measurements to fixtures or issues. The defaults disable root access,
 mutations, deep snapshots, ptrace, image/plate capture, and camera-flash writes.
@@ -181,6 +206,7 @@ mutations, deep snapshots, ptrace, image/plate capture, and camera-flash writes.
 - [Metric semantics](docs/03-metrics-semantics.md)
 - [Collecting on AXIS (runbook)](docs/05-collecting-on-axis.md)
 - [Native probe integration](docs/06-integrating-cpp-probes.md)
+- [Allocation sampling and symbolization](docs/12-allocation-sampling.md)
 - [Overhead measurement](docs/10-benchmarking-overhead.md)
 - [Investigation workflow](docs/11-investigation-workflow.md)
 - [Security and privacy](docs/08-security-privacy.md)

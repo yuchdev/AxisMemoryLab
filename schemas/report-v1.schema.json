@@ -15,7 +15,7 @@
         "type": "object",
         "required": ["type"],
         "properties": {
-          "type": {"enum": ["segment", "trend", "hypothesis", "comparison", "correlation"]}
+          "type": {"enum": ["segment", "trend", "hypothesis", "comparison", "correlation", "allocation_summary", "allocation_site"]}
         }
       }
     }

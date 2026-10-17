@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — Milestone 0004
+
+Allocation sampling and offline symbolization. Native: `AXMEM_SAMPLER` add-on (byte-interval
+Poisson sampling with unbiased weights, exact cumulative counters, tracked-sample/free
+matching, bounded ring/table/output, frame-pointer and `CaptureStackBackTrace` unwinders, module
+table with build-ids) and the opt-in `axis_memlab_new_hook` that replaces global
+`operator new`/`new[]`/`delete` with standard semantics. Host: `axis-memlab symbolize` with a
+defensive ELF reader, build-id-only symbol matching, optional `llvm-symbolizer`/`addr2line`/
+`c++filt`, live-versus-cumulative site ranking with confidence, and an `alloc-samples-v1` schema.
+Guide `docs/12`; sanitizer/heaptrack/Massif replay instructions; host overhead numbers.
+README gains external requirements for sampling. Linux paths are CI-verified only.
+
 ## Unreleased — Milestone 0001
 
 Host collection: read-only allowlisted `/proc` and cgroup parsers, local and SSH readers

@@ -16,6 +16,19 @@
     }                                                                        \
   } while (0)
 
+// Equality check that prints both values on failure.
+#define CHECK_EQ(a, b)                                                                 \
+  do {                                                                                 \
+    const auto axmem_a = (a);                                                          \
+    const auto axmem_b = (b);                                                          \
+    if (!(axmem_a == axmem_b)) {                                                       \
+      std::fprintf(stderr, "%s:%d: CHECK_EQ failed: %s == %s (%llu vs %llu)\n",       \
+                   __FILE__, __LINE__, #a, #b, static_cast<unsigned long long>(axmem_a), \
+                   static_cast<unsigned long long>(axmem_b));                          \
+      std::exit(1);                                                                    \
+    }                                                                                  \
+  } while (0)
+
 inline std::string slurp(const std::string &path) {
   std::ifstream in(path, std::ios::binary);
   std::ostringstream buffer;

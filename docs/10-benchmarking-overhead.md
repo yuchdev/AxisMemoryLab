@@ -73,3 +73,12 @@ against one with frequent sparse reads. Per cycle the collector makes one SSH co
 the regular reads, plus one for the fd listing and one for sparse files when due, so
 connection setup dominates; if it is too costly, lengthen the interval rather than adding
 persistent connections (not implemented). No device numbers exist yet.
+
+## Allocation sampler overhead (M0004)
+
+Host numbers for the `operator new` hook at several intervals, and the method, are in
+`docs/12-allocation-sampling.md`, section 7. To measure on a device: run the same workload
+with a build that does not link the hook, one that links it with the sampler stopped, and ones
+that run it at the intervals you intend to use; compare throughput, CPU, and RSS, and read
+`app.sampler.*` for dropped records. Sampling nearly every allocation costs roughly an order of
+magnitude on a host; do not extrapolate to a camera. No device numbers exist yet.

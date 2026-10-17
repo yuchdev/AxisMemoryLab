@@ -120,7 +120,7 @@ left without an owner.
 | C ABI (counter, gauge, resource, phase marker, snapshot) | Done | `native/include/axis_memlab/probe.h` |
 | C++ RAII (`ResourceGuard`) and handle wrappers | Done | `probe.hpp`, `counters.hpp`, `ledger.hpp` |
 | Compile-time `AXMEM_DISABLED`, `AXMEM_COUNTERS`, `AXMEM_LEDGER` | Done | exactly one per build |
-| `AXMEM_SAMPLER` | M0004 | configure rejects it |
+| `AXMEM_SAMPLER` | Done (M0004) as an add-on to COUNTERS/LEDGER | configure rejects it alone or with DISABLED |
 | Relaxed-atomic counters; no hot-path allocation or I/O | Done | counters mode takes no lock |
 | Counter set: acquired/released/in-flight, queue depth/bytes/high-watermark/drops, sessions, reconnects, workers, stage timings, allocation failures | Done (generic `app.<name>` names; the application chooses them) | |
 | `RssAnon`/`RssFile`/`RssShmem`, `Pss`/private from `/proc/self`; fd count; thread count | Done | opt-in for `smaps_rollup` and fd count |
@@ -150,11 +150,13 @@ left without an owner.
 
 | Tool / technique | Status | Where |
 | --- | --- | --- |
-| Allocation sampler with bounded stacks, matched alloc/free, no device-side symbolization | M0004 (M4-S01…S03, S06) | |
-| `addr2line`, `llvm-symbolizer`, `gdb` symbol resolution; build-id check rejecting mismatches | M0004 (M4-S04) | |
-| Frame pointers / unwind metadata in profiling builds; unstripped build-id-matched symbols kept off-camera | M0004 (added) | build guidance |
-| AddressSanitizer / LeakSanitizer | M0004 (M4-S05) | workstation/lab replay |
-| `heaptrack`, Valgrind Massif, DHAT | M0004 (M4-S05) | replay only; Valgrind cannot work from `/proc` snapshots (restated in the M0004 doc, added) |
+| Allocation sampler with bounded stacks, matched alloc/free, no device-side symbolization | Done (M0004; Linux paths CI-verified, no device run) | `docs/12`, `native/src/sampler.cpp` |
+| `addr2line`, `llvm-symbolizer` symbol resolution; build-id check rejecting mismatches | Done (M0004) | `symbolization/resolve.py`; built-in ELF reader as fallback |
+| `gdb` for symbol resolution | Declined: the three resolvers above cover it; `gdb` stays a manual alternative | |
+| Off-camera demangling | Done (`c++filt`, optional) | names stay mangled and the report says so when absent |
+| Frame pointers / unwind metadata in profiling builds; unstripped build-id-matched symbols kept off-camera | Done (M0004) | `docs/12`, section 4; `axis_memlab_sampler_flags` |
+| AddressSanitizer / LeakSanitizer | Done as documentation (M0004-S05) | `docs/12`, section 6; workstation replay |
+| `heaptrack`, Valgrind Massif, DHAT | Done as documentation (M0004-S05) | replay only; the Valgrind limitation is stated in `docs/12`, section 6 |
 | Core / full memory dumps | M0005 (added): guidance only, with the privacy warning; never ordinary telemetry | |
 | `gdbserver` (lab, supported Axis tooling) | M0005 (M5-S02) | no automatic activation |
 | `strace` (scoped syscalls, lab) | M0005 (added) | |
@@ -186,5 +188,5 @@ for M0000 and are validated strictly; the differences are carried to M0001.
 | **M0001** | `fdinfo` and `Private_Hugetlb`; all-process summary; Axis log access; SSH audit record; profile/config reconciliation; `tiny-probe` if needed; everything that needs a real device (compatibility rows, SSH overhead, 1 h and 24 h runs) |
 | **M0002** | Plots; rules D, E (and refinements of B, C); `H-RECONNECT`, `H-DETECTION`; step and sawtooth detection; uncertainty and reliability fields; configurable thresholds; time-to-exhaustion estimate; richer report header; CLI parity; remaining synthetic traces; differential `smaps`/fd reports |
 | **M0003** | Device overhead and < 1 MiB measurement; real VDO/Larod adapters (need the SDK); `malloc_info`; ledger latency/stage; large-population sampling; optional emitter helper; Linux (gcc/clang) verification; stage-isolation guide |
-| **M0004** | All of section 5 sampler/symbolization/sanitizer items |
+| **M0004** | Linux verification in CI and on a real binary; device perturbation; 32-bit ARM unwinding; PE/PDB symbolization (not planned) |
 | **M0005** | Safety review for `deep` captures (`smaps`, allocator reports); DDH, `gdbserver`, `strace`, `perf`/ftrace/eBPF, slab/DMA-BUF debugfs, core-dump guidance, server report ingestion, escalation bundle |
