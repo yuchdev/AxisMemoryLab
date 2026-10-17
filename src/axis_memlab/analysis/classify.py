@@ -228,7 +228,7 @@ def classify_segment(run_id: str, segment: Segment, trends: Trends) -> list[dict
 
 
 def not_evaluated(run_id: str) -> list[dict[str, Any]]:
-    """Hypotheses this milestone has no automated rule for, stated so they are not forgotten."""
+    """Hypotheses this milestone has no automated rule for, so they are not forgotten."""
     return [
         {
             "type": "hypothesis",

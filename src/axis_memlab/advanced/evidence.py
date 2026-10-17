@@ -52,7 +52,7 @@ class Evidence:
     problems: list[str] = field(default_factory=list)
 
     @property
-    def device(self) -> dict[str, Any]:
+    def device(self) -> dict[Any, Any]:
         return dict(self.data["device"])
 
     @property
@@ -240,8 +240,8 @@ def check(
     return results
 
 
-def capabilities_from_records(records: list[dict[str, Any]]) -> list[dict[str, str]]:
-    """Latest state of each capability seen in a run's ``capability`` records."""
+def capabilities_from_records(records: list[dict[Any, Any]]) -> list[dict[str, str]]:
+    """The latest state of each capability seen in a run's ``capability`` records."""
     latest: dict[str, dict[str, str]] = {}
     for record in records:
         annotations = record.get("annotations") or {}

@@ -3,7 +3,7 @@
 The repository does not run any of these on a device. The catalog is the single list that the
 evidence gate (``evidence.py``), the CLI (``axis-memlab advanced list``), and
 ``docs/13-advanced-diagnostics.md`` are generated from, so they cannot drift apart. Every entry is
-**blocked until verified for a specific firmware** (see ``evidence.py``).
+**blocked until verified for specific firmware** (see ``evidence.py``).
 """
 
 from __future__ import annotations
