@@ -7,3 +7,7 @@ class ConfigError(ValueError):
 
 class FeatureUnavailableError(RuntimeError):
     """A command belongs to a later milestone and has not been implemented."""
+
+
+class RunDataError(ValueError):
+    """A run archive or report document is unreadable or violates its contract."""

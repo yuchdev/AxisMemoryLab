@@ -9,7 +9,16 @@
     "run_references": {"type": "array", "items": {"type": "string", "format": "uuid"}, "minItems": 1},
     "generated_at": {"type": "string", "format": "date-time"},
     "limitations": {"type": "array", "items": {"type": "string"}},
-    "findings": {"type": "array", "items": {"type": "object"}}
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {"enum": ["segment", "trend", "hypothesis", "comparison", "correlation"]}
+        }
+      }
+    }
   },
   "additionalProperties": false
 }

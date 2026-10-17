@@ -1,1 +1,1 @@
-"""M0002 owns analysis; no diagnostic inference is implemented in M0000."""
+"""Offline analysis of local run archives; no network or device access."""

@@ -15,5 +15,11 @@ Optional `annotations` and `source_metadata` are objects; identity details that
 were not discovered are omitted rather than invented.
 No image, video, or plate fields are part of this schema.
 
+Provisional phase convention used by M0002 analysis (M0001 to confirm): an `event`
+record with `annotations` `{"event":"phase_start","phase":"T2"}` opens a named phase, and
+`{"event":"segment_boundary","reason":"..."}` marks a restart or configuration change.
+`report-v1` findings each carry a `type` of `segment`, `trend`, `hypothesis`,
+`comparison`, or `correlation`.
+
 Fixtures in this repository are synthetic. Schema version 1 is preliminary and
 does not imply deployed protocol stability.
