@@ -40,7 +40,7 @@ def simulator(tmp_path_factory: pytest.TempPathFactory) -> Path:
     if shutil.which("cmake") is None:
         pytest.skip("cmake is not installed")
     build = tmp_path_factory.mktemp("native-ledger")
-    configure = _run(["cmake", "-S", str(ROOT / "native"), "-B", str(build), "-DAXMEM_LEDGER=ON"])
+    configure = _run(["cmake", "-S", str(ROOT), "-B", str(build), "-DAXMEM_LEDGER=ON"])
     if configure.returncode != 0:
         if "No CMAKE_CXX_COMPILER" in configure.stderr + configure.stdout:
             pytest.skip("no C++ compiler available")

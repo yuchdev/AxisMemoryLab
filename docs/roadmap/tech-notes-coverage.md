@@ -37,14 +37,14 @@ left without an owner.
 | `/proc/PID/smaps_rollup` | Done (host and in-app, sparse) | no fallback to `smaps` |
 | `/proc/PID/fd` count and target classes (socket, pipe, `dmabuf`, file, …) | Done (host and in-app count) | targets are classified and discarded |
 | `/proc/PID/fdinfo`, `Private_Hugetlb` | M0001 (open) | not parsed or collected yet |
-| `/proc/PID/maps`, `/proc/PID/smaps` (triggered, once) | M0005 (added): needs a separate safety review | `deep` is refused: `snapshot --level deep` exits 3 and `allow_deep_snapshot=true` is rejected; M2-S03 differential reports depend on it |
+| `/proc/PID/maps`, `/proc/PID/smaps` (triggered, once) | Reviewed and kept blocked (M0005, `docs/decisions/0003-advanced-diagnostics.md`) | `snapshot --level deep` exits 3; `allow_deep_snapshot=true` is rejected; the gate never allows `deep_smaps`; M2-S03 differential reports depend on this |
 | `SwapPss` | Done (M0001) | |
 | Boot id for segmentation | Done (host, in-app, analysis) | |
 | Cgroup memory (v1/v2) | Done (M0001, conditional) | `sources/cgroup.py`; correlation use in M0005-S03 |
 | Cross-process summary (accessible PIDs) | M0001 (open) | `discover` resolves the target by command name only |
 | Axis app log / `journalctl` / syslog | M0001 (open): needs a different, reviewed allowlist; log text may be sensitive | |
-| Axis device server report | M0005 (M5-S05), runbook mentions the export | exported by an authorized operator |
-| Device Data Hub CPU/memory topics | M0005 (M5-S01) | `sources/ddh.py` stays a placeholder until then |
+| Axis device server report | Done (M0005): text-file handling and redaction in the bundle; the export itself is manual | `docs/09`, `docs/13` section 3 |
+| Device Data Hub CPU/memory topics | Partial (M0005): generic mapping-driven importer done; a firmware-specific mapping needs a device | `sources/ddh.py`, `advanced import-ddh` |
 | `ps` / `top` | Declined as a source of truth | PB §5: convenience only; discovery does not execute tools |
 
 ## 2. Collection policy and host tooling (PB §2, §7, §8; SP §3, §5, §6, §9)
@@ -55,7 +55,7 @@ left without an owner.
 | Level 1 regular samples | Done (host); Done (in-app snapshots) | |
 | Level 2 sparse snapshots | Done (M0001) | `smaps_rollup`, fd inventory, cgroup at `smaps_rollup_interval_seconds` |
 | Level 3 triggered snapshot, cooldown, abort under memory pressure | Partial: trigger → sparse snapshot with cooldown, skip under low memory, abort below threshold are Done; the `smaps` part is blocked (deep) | |
-| Level 4 development-only probes | M0005 | gated by verified compatibility |
+| Level 4 development-only probes | Done as gated guides (M0005); nothing run on a device | `docs/13`; `advanced check` |
 | `discover`, `collect`, `annotate`, `snapshot`, `import`, `purge` | Done (M0001), fixture and simulated-`ssh` tested; not run on a device | `cli_device.py` |
 | SSH transport: key file, host-key verification, timeouts, exponential backoff, no shell, option-injection safe | Done | `transport/ssh.py`; option acceptance checked with `ssh -G` |
 | Separate audit record of SSH sessions | M0001 (open) | the device's own logs only |
@@ -94,8 +94,8 @@ left without an owner.
 | Rule A application retention | Done (`H-RETENTION`) | |
 | Rule B allocator caching/fragmentation | Partial (`H-ALLOCATOR` uses ledger bytes) | M0002: also use `app.allocator.*` arena growth |
 | Rule C shared / other-service memory | Partial (`H-NOT-IN-PROCESS`) | M0002: use `Shmem` and other-process trends once collected |
-| Rule D `SUnreclaim`/slab grows while app is flat | M0002 (added) | needs M0001 `meminfo` data |
-| Rule E fd / DMA handle count monotonic growth | M0002 (added) | needs `process.fd_count` (probe has it now) |
+| Rule D `SUnreclaim`/slab grows while app is flat | Done (M0005-S03, `H-KERNEL-SLAB`) | `analysis/classify.py` |
+| Rule E fd / DMA handle count monotonic growth | Done (M0005-S03, `H-DMABUF-HANDLES`, plus `H-SHARED-BUFFERS`, `H-CGROUP-CHARGE`) | `analysis/classify.py` |
 | Rule F growth per reconnect | M0002 (`H-RECONNECT`, currently `not_evaluated`) | evaluable now with a reconnect counter |
 | Growth tracks detections, not frames | M0002 (`H-DETECTION`, currently `not_evaluated`) | evaluable now with counters |
 | Plateau detection | Done (`H-PLATEAU`) | |
@@ -105,7 +105,7 @@ left without an owner.
 | Findings list intervals, contradictory evidence, outstanding tests | Partial | next comparison and alternatives are present; time intervals and contradictions are not |
 | Report carries device/build IDs, timeline, suspected subsystem, confidence, next test | Partial → M0002 (added) | manifest facts are not yet copied into the report |
 | Differential `smaps` mapping-group and fd inventory reports | M0002 (M2-S03) | needs M0001 triggered snapshots |
-| Redacted escalation bundle | M0005 (M5-S05; `docs/09`) | SP lists it under M2-S05; ownership moved, see `docs/decisions/0001-tech-notes-reconciliation.md` |
+| Redacted escalation bundle | Done (M0005-S05): `axis-memlab bundle`; contact, transfer, and retention procedures are owner-supplied TODO | `docs/09` |
 | CLI parity with SP §5 (`analyze --warmup --compare-phase A:B --json`, `compare --normalize`, `report --run`) | M0002 (added) | current flags differ; reconciled in the decision record |
 | Synthetic traces: constant, warm-up/plateau, linear, restart, platform decline, allocator | Done | `tests/unit/test_analysis.py` |
 | Synthetic traces: stepwise reconnect, sawtooth, outliers, collector outage, fps-change normalization, independent-metric false correlation, DMA handles without RSS growth | M0002 (added) | |
@@ -157,13 +157,13 @@ left without an owner.
 | Frame pointers / unwind metadata in profiling builds; unstripped build-id-matched symbols kept off-camera | Done (M0004) | `docs/12`, section 4; `axis_memlab_sampler_flags` |
 | AddressSanitizer / LeakSanitizer | Done as documentation (M0004-S05) | `docs/12`, section 6; workstation replay |
 | `heaptrack`, Valgrind Massif, DHAT | Done as documentation (M0004-S05) | replay only; the Valgrind limitation is stated in `docs/12`, section 6 |
-| Core / full memory dumps | M0005 (added): guidance only, with the privacy warning; never ordinary telemetry | |
-| `gdbserver` (lab, supported Axis tooling) | M0005 (M5-S02) | no automatic activation |
-| `strace` (scoped syscalls, lab) | M0005 (added) | |
-| `perf` / ftrace / eBPF (vendor-approved lab images) | M0005 (M5-S04) | |
-| Slab accounting, DMA-BUF debugfs | M0005 (added; M5-S03 names only shared buffers) | |
+| Core / full memory dumps | Done as guidance (M0005): never in a bundle, owner approval required | `docs/13` section 9 |
+| `gdbserver` (lab, supported Axis tooling) | Done as a gated guide (M0005-S02); Developer Mode is manual, never toggled by the tools | `docs/13` section 5 |
+| `strace` (scoped syscalls, lab) | Done as a gated guide (M0005) | `docs/13` section 4 |
+| `perf` / ftrace / eBPF (vendor-approved lab images) | Done as gated guides (M0005-S04); vendor recipes need a lab image | `docs/13` sections 6-7 |
+| Slab accounting, DMA-BUF debugfs | Done as gated guides (M0005); paired with `H-KERNEL-SLAB` and `H-DMABUF-HANDLES` | `docs/13` section 8 |
 | Kernel-attribution rule: `kmalloc` events do not identify userspace `malloc` sites | Docs | stated in `docs/11` and kept in the tech notes; repeated in the M0005 doc (added) |
-| Platform/service correlation with capability checks | M0005 (M5-S03) | |
+| Platform/service correlation with capability checks | Partial (M0005-S03): shared buffers, DMA handles, slab, cgroup done; other services' memory needs the open M0001 all-process summary | `analysis/classify.py` |
 
 ## 6. Configuration (`tech_notes/configs-default.toml`)
 
@@ -189,4 +189,4 @@ for M0000 and are validated strictly; the differences are carried to M0001.
 | **M0002** | Plots; rules D, E (and refinements of B, C); `H-RECONNECT`, `H-DETECTION`; step and sawtooth detection; uncertainty and reliability fields; configurable thresholds; time-to-exhaustion estimate; richer report header; CLI parity; remaining synthetic traces; differential `smaps`/fd reports |
 | **M0003** | Device overhead and < 1 MiB measurement; real VDO/Larod adapters (need the SDK); `malloc_info`; ledger latency/stage; large-population sampling; optional emitter helper; Linux (gcc/clang) verification; stage-isolation guide |
 | **M0004** | Linux verification in CI and on a real binary; device perturbation; 32-bit ARM unwinding; PE/PDB symbolization (not planned) |
-| **M0005** | Safety review for `deep` captures (`smaps`, allocator reports); DDH, `gdbserver`, `strace`, `perf`/ftrace/eBPF, slab/DMA-BUF debugfs, core-dump guidance, server report ingestion, escalation bundle |
+| **M0005** | Device evidence for every diagnostic (the gate blocks all of them today); firmware-specific DDH mapping; vendor `perf`/`ftrace`/eBPF recipes; other-service correlation (needs the M0001 all-process summary); owner-supplied contact, transfer, and retention procedures; deep captures stay blocked by decision |

@@ -5,7 +5,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from axis_memlab.analysis.classify import Trends, classify_segment, not_evaluated
+from axis_memlab.analysis.classify import (
+    PLATFORM_METRICS,
+    Trends,
+    classify_segment,
+    not_evaluated,
+)
 from axis_memlab.analysis.correlate import correlate_segment
 from axis_memlab.analysis.load import LoadedRun
 from axis_memlab.analysis.phase import Segment, segment_run
@@ -26,7 +31,8 @@ BASE_LIMITATIONS = (
 
 def _metric_names(segment: Segment, settings: AnalysisSettings) -> list[str]:
     present = {name for s in segment.samples for name in s.metrics}
-    return sorted((set(settings.metrics) | {n for n in present if n.startswith("app.")}) & present)
+    wanted = set(settings.metrics) | set(PLATFORM_METRICS)
+    return sorted((wanted | {n for n in present if n.startswith("app.")}) & present)
 
 
 def analyze_run(

@@ -43,7 +43,7 @@ escalate with a reproducible case.
 | C++ probe, `COUNTERS` and `LEDGER` modes | implemented (M0003), host-tested, **not yet run on a camera** | Stage 5 |
 | `discover`, `collect`, `annotate`, `snapshot`, `import`, `purge` | implemented (M0001), fixture-tested, **not yet run on a camera** | Stages 1, 2, 5 |
 | Allocation sampling (`AXMEM_SAMPLER`) and `axis-memlab symbolize`; sanitizer and heap-profiler replay instructions | implemented (M0004), host-tested; not run on a camera | Stage 8 (escalation); `docs/12-allocation-sampling.md` |
-| Vendor-assisted kernel/driver inspection (`gdbserver`, `strace`, `perf`, slab/DMA-BUF), device server report | not implemented (M0005) | Stage 8 (escalation) |
+| Vendor-assisted kernel/driver inspection (`gdbserver`, `strace`, `perf`, slab/DMA-BUF), device server report | gate, evidence record, DDH import, platform rules, and bundle implemented (M0005); **no diagnostic has been run on a device** | Stage 8 (escalation); `docs/13-advanced-diagnostics.md` |
 
 Every tool and technique in the tech notes has an owner; see
 `docs/roadmap/tech-notes-coverage.md`.
@@ -245,7 +245,7 @@ the process. Prefer the lowest mode that answers the question.
 | `AXMEM_COUNTERS` | relaxed atomics | Always-on-capable counters: totals, queue depths, per-kind in-flight **counts** |
 | `AXMEM_LEDGER` | one mutex per acquire/release | Lab/development: exact in-flight **bytes**, duplicate/unmatched detection, oldest live ids |
 
-Build and test: `cmake -S native -B build/native -DAXMEM_COUNTERS=ON` (or
+Build and test: `cmake -S . -B build/native -DAXMEM_COUNTERS=ON` (or
 `-DAXMEM_LEDGER=ON`), then `ctest`. Exactly one mode must be selected; combining modes or
 requesting the sampler is a configure-time error.
 
@@ -344,10 +344,13 @@ Escalate only when S6 leaves a remainder the application does not own.
 | System memory falls, process flat, analytics-dependent | Vendor-supported inspection of other services and drivers (M0005); firmware A/B | Vendor |
 | Platform regression across firmware | Evidence bundle of the paired runs and manifests | Vendor |
 
-Bundle contents (after approved redaction, `docs/09-customer-escalation.md` is still an
-outline): manifests, redacted reports, the test plan, the reproducer, and the list of
-sources that were unreadable. No images, footage, plate text, credentials, addresses, or
-serial numbers.
+Build the bundle with `axis-memlab bundle` (`docs/09-customer-escalation.md`): manifest,
+analysis, capability and error records, limitations, optional allocation report, evidence,
+plan, reproducer, and a redacted server report. It refuses when identifying text remains. No
+images, footage, plate text, credentials, addresses, or serial numbers; contact and transfer
+procedures are owner-supplied. For kernel- or driver-side suspicion, check the gate first:
+`axis-memlab advanced check --evidence evidence.json --diagnostic <id> --for-firmware <v>`.
+You can rehearse the whole flow on the virtual board (`docs/device-optional/README.md`).
 
 ## 12. Quick reference: observation → action
 
@@ -369,7 +372,7 @@ The repository ships a synthetic pipeline with injected defects. It uses no came
 and demonstrates the S5 → S3 loop end to end.
 
 ```bash
-cmake -S native -B build/native-ledger -DAXMEM_LEDGER=ON
+cmake -S . -B build/native-ledger -DAXMEM_LEDGER=ON
 cmake --build build/native-ledger --config Release --target axis_memlab_lifecycle_simulator
 SIM=build/native-ledger/Release/axis_memlab_lifecycle_simulator   # path varies by generator
 mkdir -p /tmp/sim-leak && $SIM /tmp/sim-leak/records.jsonl leak
@@ -383,3 +386,11 @@ mode while the acquired/released totals both keep growing, so only the *differen
 exposes the defect; in `queue` mode the queue-depth gauge rises while frames stay
 balanced; in `ok` mode both are flat. This is how the three defect classes separate in a
 real run, subject to the real application's noise.
+
+## Note on reconnect cycles
+
+Do not put a phase marker at every reconnect: a marker starts a new analysis segment, so a run
+with a marker per reconnect is split into tiny segments and growth *across* reconnects (the thing
+T4 looks for) becomes invisible. Count reconnects with a counter
+(`app.reconnects_total_count`) and give each long-lived per-connection object its own resource
+kind, as the virtual camera does (`app.resource.session.in_flight_count`).

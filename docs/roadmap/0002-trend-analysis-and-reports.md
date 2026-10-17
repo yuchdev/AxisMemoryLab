@@ -72,3 +72,10 @@ that review.
 | M2-S04 conservative classification with uncertainty | partial: conservative wording and alternatives done; uncertainty fields open |
 | M2-S05 Markdown/CSV/HTML reports; PNG; escalation bundle | Markdown, CSV, HTML, JSON done; PNG open; bundle moved to M0005 |
 | M2-S06 synthetic traces | partial: see the list above |
+
+## Update after milestone 0005
+
+Attribution rules D (kernel slab) and E (DMA-buffer handles), and shared-buffer and cgroup rules,
+are implemented as part of M0005-S03 (`docs/13-advanced-diagnostics.md`, section 11). The
+remaining 0002 items are unchanged; differential `smaps`/fd reports stay blocked by the
+deep-capture decision.

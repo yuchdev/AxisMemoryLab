@@ -17,6 +17,9 @@ else()
   axmem_test(test_snapshot test_snapshot.cpp)
   axmem_test(test_output_cap test_output_cap.cpp)
   add_test(NAME benchmark_smoke COMMAND axis_memlab_overhead_bench 20000)
+  add_test(NAME virtual_camera_smoke COMMAND axis_memlab_virtual_camera --seconds 1 --no-pacing
+           --width 160 --height 90 --probe-out ${CMAKE_CURRENT_BINARY_DIR}/virtual_camera_probe.jsonl
+           --snapshot-ms 100 --defect release_miss --defect-every 10)
   add_test(NAME example_queue_metrics COMMAND axis_memlab_queue_metrics_example
            ${CMAKE_CURRENT_BINARY_DIR}/queue_metrics_example.jsonl)
   add_test(NAME example_vdo_lifecycle COMMAND axis_memlab_vdo_lifecycle_example

@@ -64,3 +64,10 @@ records, with raw program counters, module base names and build-ids, and statist
 It is not part of `records.jsonl`; `axis-memlab symbolize` turns it into a `report-v1`
 document (`allocation_summary` and `allocation_site` findings). Format and semantics:
 `docs/12-allocation-sampling.md`.
+
+## Compatibility evidence and bundles (M0005)
+
+`schemas/compat-evidence-v1.schema.json` describes what was verified on one device and firmware
+and drives the gate for advanced diagnostics. `axis-memlab bundle` writes a directory with a
+`BUNDLE.json` descriptor (files, SHA-256, redaction counts, review status). Neither is part of a
+run's `records.jsonl`. See `docs/13-advanced-diagnostics.md` and `docs/09-customer-escalation.md`.

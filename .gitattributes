@@ -1,0 +1,5 @@
+# Scripts and cloud-init templates must keep LF line endings on every platform: a CR in a shell
+# script or in user-data breaks it on the board.
+*.sh text eol=lf
+*.template text eol=lf
+*.jsonl text eol=lf

@@ -10,7 +10,3 @@ No milestone is considered complete until its acceptance gates pass.
 | 0003 | In-app profiling and counters | 0000, 0001 |
 | 0004 | Allocation samples and offline symbolization | 0003 |
 | 0005 | Advanced AXIS diagnostics | 0001–0004 and verified compatibility |
-
-## Reminder of README
-
-In README.md between `Development checks` and `Limitations and safety` insert chapter `Lab Tools` with the list (if necessary with sublists) describing the repo content, usage and potential positive effect on investigation

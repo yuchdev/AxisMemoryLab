@@ -15,6 +15,15 @@ Trends = dict[str, tuple[TrendStats | None, TrendStats]]
 
 AVAILABLE = "system.mem.available_bytes"
 PROCESS_METRICS = ("process.pss_bytes", "process.rss_anon_bytes")
+PLATFORM_METRICS = (
+    "system.mem.shmem_bytes",
+    "system.mem.slab_unreclaim_bytes",
+    "system.mem.cached_bytes",
+    "process.rss_shmem_bytes",
+    "process.fd_count",
+    "process.fd_dmabuf_count",
+    "process.cgroup_memory_current_bytes",
+)
 CAVEAT = "Observation consistent with the hypothesis; it does not establish a cause."
 
 _NOT_EVALUATED = (
@@ -157,6 +166,64 @@ def classify_segment(run_id: str, segment: Segment, trends: Trends) -> list[dict
                 "Verify the bound across representative workloads and longer durations.",
             )
             break
+
+    # ---- platform correlation (M0005-S03): shared buffers, DMA handles, kernel slab, cgroup ----
+    shmem, slab = "system.mem.shmem_bytes", "system.mem.slab_unreclaim_bytes"
+    rss_shmem, dmabuf = "process.rss_shmem_bytes", "process.fd_dmabuf_count"
+    cgroup = "process.cgroup_memory_current_bytes"
+    anon = _direction(trends, "process.rss_anon_bytes")
+    pss = _direction(trends, "process.pss_bytes")
+    if _direction(trends, shmem) == "rising" and (
+        _direction(trends, rss_shmem) == "rising" or _direction(trends, dmabuf) == "rising"
+    ):
+        add(
+            "H-SHARED-BUFFERS",
+            "Shared or video-buffer memory is rising together with the process's shared pages "
+            "or DMA-buffer handles",
+            [shmem, rss_shmem, dmabuf],
+            ["Legitimate buffer pools growing to a steady state", "Another process sharing them"],
+            "Compare with the application stopped (T1) and check buffer release paths.",
+        )
+    if _direction(trends, dmabuf) == "rising" and anon != "rising":
+        add(
+            "H-DMABUF-HANDLES",
+            "The number of open DMA-buffer descriptors is rising while anonymous memory is not "
+            "(handle lifecycle)",
+            [dmabuf, "process.fd_count", "process.rss_anon_bytes"],
+            ["Buffers held on purpose by a pipeline stage", "Counting artefacts in the fd class"],
+            "Audit open/close pairing of buffer handles; compare per frame and per reconnect.",
+        )
+    process_known = [d for d in (anon, pss) if d is not None]
+    if (
+        _direction(trends, slab) == "rising"
+        and process_known
+        and all(d != "rising" for d in process_known)
+    ):
+        add(
+            "H-KERNEL-SLAB",
+            "Kernel slab (unreclaimable) is rising while the monitored process is not; the "
+            "allocator and the owner are unconfirmed",
+            [slab, "process.pss_bytes", "process.rss_anon_bytes"],
+            [
+                "Other processes or drivers",
+                "Caches that stop growing later",
+                "Kernel work done on behalf of the process",
+            ],
+            "Lab-only slab accounting needs verified permission (axis-memlab advanced check); "
+            "compare with a no-application baseline.",
+        )
+    if _direction(trends, cgroup) == "rising" and anon is not None and anon != "rising":
+        add(
+            "H-CGROUP-CHARGE",
+            "The cgroup's memory charge is rising while the process's anonymous memory is not",
+            [cgroup, "process.rss_anon_bytes", "system.mem.cached_bytes"],
+            [
+                "Page cache charged to the group",
+                "Other processes in the same cgroup",
+                "Kernel memory charged to the group",
+            ],
+            "Compare cgroup memory.stat categories (lab) and the other members of the cgroup.",
+        )
     return findings
 
 

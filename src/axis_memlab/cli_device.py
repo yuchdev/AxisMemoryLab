@@ -12,6 +12,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from axis_memlab.collection.annotate import annotate
 from axis_memlab.collection.discovery import discover
@@ -104,6 +105,10 @@ def add_device_commands(commands: Any) -> None:
     c.add_argument("--out", required=True, type=Path, help="directory that will hold the run")
     c.add_argument("--duration-seconds", type=float)
     c.add_argument("--max-samples", type=int)
+    c.add_argument(
+        "--run-id",
+        help="UUID for the run, so records from the application can be imported into it",
+    )
     c.add_argument("--compress", action="store_true", help="gzip records.jsonl when finished")
     c.add_argument(
         "--no-wait", action="store_true", help="offline demos only: do not sleep between cycles"
@@ -233,8 +238,12 @@ def _cmd_collect(args: argparse.Namespace, clock: Clock | None = None) -> int:
         raise CollectionError("--no-wait is only for offline --procfs-root demos")
     device_id = validate_device_id(args.device_id)
     reader = _reader(args, config)
+    try:
+        run_id = str(UUID(args.run_id)) if args.run_id else new_run_id()
+    except ValueError:
+        raise CollectionError("--run-id must be a UUID") from None
     manifest = build_manifest(
-        run_id=new_run_id(),
+        run_id=run_id,
         device_id=device_id,
         scenario=args.scenario,
         privacy_classification=args.privacy_classification,

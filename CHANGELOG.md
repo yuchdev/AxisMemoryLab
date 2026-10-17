@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — Milestone 0005
+
+Evidence-gated advanced diagnostics and escalation. `axis-memlab advanced list | evidence | check |
+import-ddh`: a catalog of 12 Level 3-4 diagnostics, a compatibility evidence record
+(`compat-evidence-v1`) and a fail-closed per-firmware gate (deep captures never allowed), a
+mapping-driven Device Data Hub importer. Analysis: shared-buffer, DMA-buffer-handle, kernel-slab,
+and cgroup-charge hypotheses. `axis-memlab bundle`: minimal, scanned, redacted, hash-verified
+escalation bundles with server-report handling. Guides: `docs/13`, `docs/09`, decision 0003
+(deep captures stay blocked). New `axis_memlab_virtual_camera` (synthetic CCTV pipeline with five
+injectable defects) and the Orange Pi 5 virtual-board deployment (`docs/device-optional/`, Tier 1
+confined process, Tier 2 QEMU VM) with dry-run-tested scripts. `collect --run-id`; Linux live
+`/proc` test; the repository root `CMakeLists.txt` (with `enable_testing()`) is now the CMake entry
+point. README gains requirements for the new tools and a refreshed Lab Tools chapter. No
+advanced diagnostic has run on a device.
+
 ## Unreleased — Milestone 0004
 
 Allocation sampling and offline symbolization. Native: `AXMEM_SAMPLER` add-on (byte-interval

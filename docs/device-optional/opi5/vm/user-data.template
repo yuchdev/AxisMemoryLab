@@ -1,0 +1,29 @@
+#cloud-config
+# cloud-init user data for the virtual camera VM. Rendered by make-image.sh, which substitutes
+# your public key for the placeholder under ssh_authorized_keys. There is no password anywhere in
+# this file and none may be added.
+hostname: virtual-camera
+manage_etc_hosts: true
+users:
+  - name: camera
+    gecos: virtual camera board
+    shell: /bin/bash
+    lock_passwd: true
+    sudo: false
+    ssh_authorized_keys:
+      - @@PUBKEY@@
+ssh_pwauth: false
+disable_root: true
+package_update: false
+write_files:
+  - path: /etc/ssh/sshd_config.d/90-axmem.conf
+    permissions: "0644"
+    content: |
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin no
+      AllowTcpForwarding no
+      AllowAgentForwarding no
+      X11Forwarding no
+runcmd:
+  - [systemctl, restart, ssh]

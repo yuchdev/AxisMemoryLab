@@ -1,12 +1,16 @@
 # Native probe
 
 SDK-free C ABI (`include/axis_memlab/probe.h`) with a C++17 wrapper. Select exactly one
-mode when configuring; no mode is on by default, and the sampler (M0004) is rejected.
+base mode when configuring (no mode is on by default); `AXMEM_SAMPLER` (M0004) may be added to
+`COUNTERS` or `LEDGER`, and is refused with `DISABLED` or alone.
+
+Configure from the **repository root**: `native/` is a subdirectory of the root `CMakeLists.txt`
+and cannot be configured on its own.
 
 ```bash
-cmake -S native -B build/native -DAXMEM_DISABLED=ON    # inline no-ops, nothing to link
-cmake -S native -B build/native -DAXMEM_COUNTERS=ON    # lock-free counters, snapshots
-cmake -S native -B build/native -DAXMEM_LEDGER=ON      # + identity ledger (development)
+cmake -S . -B build/native -DAXMEM_DISABLED=ON    # inline no-ops, nothing to link
+cmake -S . -B build/native -DAXMEM_COUNTERS=ON    # lock-free counters, snapshots
+cmake -S . -B build/native -DAXMEM_LEDGER=ON      # + identity ledger (development)
 cmake --build build/native --parallel && ctest --test-dir build/native --output-on-failure
 ```
 
@@ -26,7 +30,7 @@ frozen. Nothing here has run on a camera.
 ## Allocation sampler (add-on)
 
 ```bash
-cmake -S native -B build/native -DAXMEM_COUNTERS=ON -DAXMEM_SAMPLER=ON    # or AXMEM_LEDGER=ON
+cmake -S . -B build/native -DAXMEM_COUNTERS=ON -DAXMEM_SAMPLER=ON    # or AXMEM_LEDGER=ON
 ```
 
 Adds `axis_memlab/sampler.h`, the sampler engine (`src/sampler.cpp`, `stack.cpp`, `modules.cpp`),
@@ -34,3 +38,11 @@ and the **opt-in** object library `axis_memlab_new_hook` (`src/new_hook.cpp`), w
 global `operator new` / `new[]` / `delete`. Link it into a development executable, together with
 `axis_memlab_sampler_flags` (`-g -fno-omit-frame-pointer`). Examples: `sampler_demo.cpp` (known
 allocation sites) and `sampler_bench.cpp` (overhead). Guide: `docs/12-allocation-sampling.md`.
+
+## Virtual camera and the root build
+
+`examples/virtual_camera.cpp` builds as `axis_memlab_virtual_camera` in the COUNTERS/LEDGER
+modes (linked with the `operator new` hook when the sampler is on). It is a synthetic pipeline
+with five injectable defects and is the application used by the Orange Pi 5 guide
+(`docs/device-optional/README.md`). The repository root `CMakeLists.txt` enables testing and
+includes this directory, so configure and run `ctest` from the root build directory.

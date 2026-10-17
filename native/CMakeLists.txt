@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 3.20)
-project(axis_memlab_native LANGUAGES C CXX)
-
 # Exactly one mode must be chosen explicitly; instrumentation is never enabled by default.
 option(AXMEM_DISABLED "Header-only no-op API (no data, no I/O)" OFF)
 option(AXMEM_COUNTERS "Relaxed-atomic counters, resource totals, JSONL snapshots" OFF)
@@ -94,6 +91,12 @@ else()
 
   add_executable(axis_memlab_overhead_bench examples/overhead_bench.cpp)
   target_link_libraries(axis_memlab_overhead_bench PRIVATE axis_memlab_probe)
+
+  add_executable(axis_memlab_virtual_camera examples/virtual_camera.cpp)
+  target_link_libraries(axis_memlab_virtual_camera PRIVATE axis_memlab_probe axis_memlab_sampler_flags)
+  if(AXMEM_SAMPLER)
+    target_link_libraries(axis_memlab_virtual_camera PRIVATE axis_memlab_new_hook)
+  endif()
 
   add_executable(axis_memlab_queue_metrics_example examples/queue_metrics.cpp)
   target_link_libraries(axis_memlab_queue_metrics_example PRIVATE axis_memlab_probe)

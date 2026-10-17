@@ -134,3 +134,11 @@ config hash are in the manifest. Treat it as sensitive until reviewed
 Deep captures (full `smaps`, allocator reports), restarting or changing the application, root
 or `ptrace` use, reading logs or the Axis device server report, scheduling, and any network
 listener. Later milestones may add some of these behind separate reviews.
+
+## 9. Levels 3 and 4
+
+Triggered sparse snapshots are part of `collect` (section 4). Anything beyond them (`strace`,
+`gdbserver`, `perf`, `ftrace`/eBPF, slab and DMA-BUF accounting, DDH, core dumps) is **not** part
+of collection: it is gated by verified evidence per firmware and described in
+`docs/13-advanced-diagnostics.md`. Deep captures are blocked
+(`docs/decisions/0003-advanced-diagnostics.md`).

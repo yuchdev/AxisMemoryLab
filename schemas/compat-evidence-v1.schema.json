@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "axis-memory-lab:compat-evidence-v1",
+  "title": "Axis Memory Lab compatibility evidence v1 (provisional)",
+  "description": "What was actually tested on one device and firmware, and whether each advanced diagnostic was verified available. The gate in 'axis-memlab advanced check' allows a diagnostic only when this record says it was verified available for that firmware.",
+  "type": "object",
+  "required": ["schema_version", "evidence_id", "recorded_at", "authorized_by_reference", "device", "access", "capabilities", "diagnostics", "limitations"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "evidence_id": {"type": "string", "minLength": 1},
+    "recorded_at": {"type": "string", "format": "date-time"},
+    "authorized_by_reference": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/#-]{0,79}$",
+      "description": "Approved incident or consent reference. Never a name, address, or contact."
+    },
+    "source_run_id": {"type": "string", "format": "uuid"},
+    "device": {
+      "type": "object",
+      "required": ["camera_model", "soc", "firmware_version", "lab_unit"],
+      "properties": {
+        "camera_model": {"type": "string", "minLength": 1},
+        "soc": {"type": "string", "minLength": 1},
+        "firmware_version": {"type": "string", "minLength": 1},
+        "sdk_generation": {"type": "string", "minLength": 1},
+        "libc": {"type": "string", "minLength": 1},
+        "lab_unit": {"type": "boolean", "description": "True only for a unit declared as a lab unit by its owner."}
+      },
+      "additionalProperties": false
+    },
+    "access": {
+      "type": "object",
+      "required": ["account_type", "developer_mode"],
+      "properties": {
+        "account_type": {"enum": ["dynamic_acap_user", "restricted_non_root", "developer_mode", "other"]},
+        "developer_mode": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "state"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "state": {"enum": ["available", "denied", "missing", "timeout", "unsupported", "unknown"]},
+          "reason": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "properties": {
+          "id": {"enum": ["ddh_topics", "server_report", "strace_scoped", "gdbserver", "perf_stat", "perf_record", "ftrace", "ebpf", "slabinfo", "dmabuf_debugfs", "core_dump", "deep_smaps"]},
+          "status": {"enum": ["verified_available", "verified_unavailable", "not_tested"]},
+          "method": {"type": "string", "description": "How it was tested. Required for any status other than not_tested."},
+          "notes": {"type": "string"}
+        },
+        "if": {"properties": {"status": {"enum": ["verified_available", "verified_unavailable"]}}, "required": ["status"]},
+        "then": {"required": ["method"], "properties": {"method": {"minLength": 1}}},
+        "additionalProperties": false
+      }
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

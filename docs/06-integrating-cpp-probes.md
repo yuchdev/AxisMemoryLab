@@ -21,7 +21,7 @@ Select exactly one base mode per build (none or several is a configure error); `
 | `AXMEM_SAMPLER=ON` (add-on) | Statistical allocation sampling and the opt-in `operator new` hook; needs COUNTERS or LEDGER, refused with DISABLED. See `docs/12-allocation-sampling.md` | sampled events only; development builds |
 
 ```bash
-cmake -S native -B build/native -DAXMEM_LEDGER=ON
+cmake -S . -B build/native -DAXMEM_LEDGER=ON
 cmake --build build/native --parallel && ctest --test-dir build/native --output-on-failure
 ```
 

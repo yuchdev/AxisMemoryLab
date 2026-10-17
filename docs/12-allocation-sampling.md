@@ -134,7 +134,7 @@ pseudonym rule and nothing in the file is free text.
 Build (development builds only):
 
 ```bash
-cmake -S native -B build/native -DAXMEM_COUNTERS=ON -DAXMEM_SAMPLER=ON    # or AXMEM_LEDGER=ON
+cmake -S . -B build/native -DAXMEM_COUNTERS=ON -DAXMEM_SAMPLER=ON    # or AXMEM_LEDGER=ON
 ```
 
 `AXMEM_SAMPLER` is an add-on to `COUNTERS` or `LEDGER`; it is refused with `DISABLED` or alone.

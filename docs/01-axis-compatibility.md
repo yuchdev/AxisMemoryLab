@@ -56,3 +56,10 @@ Add a row only from a real run, never from documentation or assumption.
 
 Tools that discovery does not probe (`ps`, `top`, `pmap`, `journalctl`, `gdbserver`, `perf`) must
 be checked by hand and written down; the collector never executes them.
+
+## Evidence for advanced diagnostics (M0005)
+
+Record what you tested for each Level 3-4 diagnostic in a compatibility evidence record
+(`axis-memlab advanced evidence`, `docs/13-advanced-diagnostics.md`, section 1). The matrix above
+summarises access and tooling per firmware; the evidence record is the machine-readable source the
+gate reads. Neither may be filled from documentation or from the virtual Orange Pi 5 board.

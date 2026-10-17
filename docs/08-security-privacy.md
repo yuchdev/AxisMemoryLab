@@ -34,3 +34,15 @@ plate text, and camera-flash writes.
   devices, and never writes rejected lines.
 - **Limits not covered.** There is no separate audit log of SSH sessions beyond the device's
   own logs, and the archive is not encrypted at rest; use disk encryption.
+
+## Advanced diagnostics and bundles (M0005)
+
+* The gate for Level 3-4 diagnostics fails closed per firmware and is advisory; the toolset runs
+  none of them and never enables Developer Mode or changes device settings.
+* Deep captures remain blocked (`docs/decisions/0003-advanced-diagnostics.md`); the evidence
+  bundle has no option for core dumps.
+* Bundles are minimised, scanned for identifying text, and refused rather than leaked; sensitive
+  runs need a review confirmation; `--verify` detects later changes. Redaction is best-effort and
+  a person must read the result.
+* The virtual-board guide (`docs/device-optional/`) creates a locked-password, key-only,
+  no-forwarding lab user and a loopback-only VM SSH port; it opens no other port.

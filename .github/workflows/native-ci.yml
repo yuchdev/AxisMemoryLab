@@ -31,6 +31,6 @@ jobs:
             echo "CXX=clang++" >> "$GITHUB_ENV"
           fi
       - name: Configure
-        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug ${{ matrix.flags }}
+        run: cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Debug ${{ matrix.flags }}
       - run: cmake --build build/native --parallel
       - run: ctest --test-dir build/native --output-on-failure

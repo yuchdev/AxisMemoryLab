@@ -131,3 +131,18 @@ leak: resources can be mis-sized or have their ownership transferred.
 
 Sampled allocation records themselves (`alloc-samples-v1`) are a separate file; see
 `docs/12-allocation-sampling.md`.
+
+### Device Data Hub metrics (`advanced import-ddh`)
+
+`system.ddh.*` names come from the operator's mapping file (`src/axis_memlab/sources/ddh.py`).
+They are **device-wide utilization**, never per-process memory; the unit and scale are the
+operator's, `_bytes` names must use bytes, and every sample's `source_metadata` records the topic
+and its maturity (alpha at the time of writing). Missing or non-numeric values are unavailable
+with `reason_code` `missing` or `parse_error`.
+
+### Metrics the platform rules read
+
+`system.mem.shmem_bytes`, `system.mem.slab_unreclaim_bytes`, `system.mem.cached_bytes`,
+`process.rss_shmem_bytes`, `process.fd_count`, `process.fd_dmabuf_count`, and
+`process.cgroup_memory_current_bytes` are analysed automatically when present
+(`docs/13-advanced-diagnostics.md`, section 11), in addition to the configured metrics.

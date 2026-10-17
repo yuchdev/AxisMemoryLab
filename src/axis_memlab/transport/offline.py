@@ -61,12 +61,20 @@ class LocalProcfsReader:
         try:
             if directory.is_dir():
                 targets: dict[str, str] = {}
+                own = os.fspath(directory)
+                skipped_own = False
                 for entry in os.scandir(directory):
                     if entry.name.isdigit():
                         try:
-                            targets[entry.name] = os.readlink(entry.path)
+                            target = os.readlink(entry.path)
                         except OSError:
                             continue  # the descriptor closed while we were looking
+                        if target == own and not skipped_own:
+                            # On a live /proc listing our own process, the directory handle used
+                            # for the listing appears in the listing; do not count it.
+                            skipped_own = True
+                            continue
+                        targets[entry.name] = target
                 return targets
         except PermissionError:
             raise ReadError("permission_denied", f"/proc/{pid}/fd is not readable") from None

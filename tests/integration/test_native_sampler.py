@@ -35,7 +35,7 @@ def demo(tmp_path_factory: pytest.TempPathFactory) -> Path:
         pytest.skip("cmake is not installed")
     build = tmp_path_factory.mktemp("native-sampler")
     configure = _run(
-        ["cmake", "-S", str(ROOT / "native"), "-B", str(build)]
+        ["cmake", "-S", str(ROOT), "-B", str(build)]
         + ["-DAXMEM_COUNTERS=ON", "-DAXMEM_SAMPLER=ON", "-DCMAKE_BUILD_TYPE=Release"]
     )
     if configure.returncode != 0:
