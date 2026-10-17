@@ -10,22 +10,7 @@ authorized device. No Axis SDK, root account, or surveillance material is needed
 Axis Memory Lab is intended to help investigate memory behavior in applications
 running under AXIS OS. It has two deliberately separate surfaces: an optional,
 low-impact native probe in an application, and a host-side Python CLI for safe
-collection and offline analysis. Neither has been run on a camera yet.
-
-## Status
-
-| Milestone | Scope                                                     | Status                      |
-|-----------|-----------------------------------------------------------|-----------------------------|
-| 0000      | Safe scaffold, schemas, CLI contract, disabled native API | Scaffolded; gates must pass |
-| 0001      | Discovery, protocol refinement, safe collection           | Implemented; fixture only   |
-| 0002      | Trend analysis and reports                                | Implemented; synthetic only |
-| 0003      | In-application profiling                                  | Implemented; host-tested    |
-| 0004      | Allocation samples and symbolization                      | Implemented; host-tested    |
-| 0005      | Advanced AXIS diagnostics                                 | Implemented; no device evidence |
-
-See the [roadmap](docs/roadmap/README.md), the [tech-notes coverage matrix](docs/roadmap/tech-notes-coverage.md),
-[purpose and safety](docs/00-purpose-safety.md), and the
-[bootstrap decisions](docs/decisions/0000-bootstrap.md).
+collection and offline analysis. Neither hasn't been run on a camera yet.
 
 ## Install and try
 
@@ -59,69 +44,69 @@ installed or configured by the package itself.
 
 **Always (host CLI, analysis, reports, offline demo)**
 
-| Requirement | Detail |
-| --- | --- |
-| Python | 3.11 or newer; no runtime dependencies (standard library only) |
-| `pip` | To install the package; development extras add `build`, `jsonschema`, `mypy`, `pytest`, `ruff` |
-| Operating system | Windows, macOS, or Linux for the host tools |
+| Requirement      | Detail                                                                                         |
+|------------------|------------------------------------------------------------------------------------------------|
+| Python           | 3.11 or newer; no runtime dependencies (standard library only)                                 |
+| `pip`            | To install the package; development extras add `build`, `jsonschema`, `mypy`, `pytest`, `ruff` |
+| Operating system | Windows, macOS, or Linux for the host tools                                                    |
 
 **Reading a real device over SSH (`discover`, `collect`, `snapshot`)**
 
-| Requirement | Detail |
-| --- | --- |
-| OpenSSH client | An `ssh` executable on `PATH` (Windows: the optional "OpenSSH Client" feature; checked against OpenSSH 10.2). The tool starts it without a shell and never weakens its options |
-| Known host key | The device's host key must already be in your `known_hosts` (or a file given with `--ssh-known-hosts`), verified out of band. Connections to unknown or changed keys are refused, by design |
-| Key-based login | A non-interactive key (`--ssh-identity`); password prompts are disabled |
-| SSH enabled on the device | SSH is off by default on AXIS OS. From AXIS OS 12 it needs a non-root account with restricted privileges; Developer Mode (AXIS OS 11.11 and later) gives access as an ACAP application's user, with release-specific steps. See the [Axis documentation](https://developer.axis.com/acap/get-started/set-up-developer-environment/set-up-device-advanced/) |
-| Readable `/proc` | The account must be able to read the files in the [read-only allowlist](docs/05-collecting-on-axis.md#3-what-is-read). Missing or denied files are reported, not worked around (for example, cross-account `/proc/PID` entries may be unreadable; use the in-app probe then) |
-| A device you are allowed to measure | An approved development camera, with a consent or incident reference recorded in the manifest (`--consent-reference`). Do not use production cameras for experiments |
-| Device facts | Camera model, SoC, AXIS OS version, application build and ACAP SDK generation, entered by you (`--camera-model`, `--soc`, `--firmware-version`, ...); the tool does not guess them |
-| Local disk | Space for the run archive (`records.jsonl` grows with duration; `--compress` and `purge` help). Runs are stored locally only |
-| A pseudonym policy | `--device-id` must be a label you chose; serial numbers, MAC and IP addresses are refused |
+| Requirement                         | Detail                                                                                                                                                                                                                                                                                                                                                     |
+|-------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| OpenSSH client                      | An `ssh` executable on `PATH` (Windows: the optional "OpenSSH Client" feature; checked against OpenSSH 10.2). The tool starts it without a shell and never weakens its options                                                                                                                                                                             |
+| Known host key                      | The device's host key must already be in your `known_hosts` (or a file given with `--ssh-known-hosts`), verified out of band. Connections to unknown or changed keys are refused, by design                                                                                                                                                                |
+| Key-based login                     | A non-interactive key (`--ssh-identity`); password prompts are disabled                                                                                                                                                                                                                                                                                    |
+| SSH enabled on the device           | SSH is off by default on AXIS OS. From AXIS OS 12 it needs a non-root account with restricted privileges; Developer Mode (AXIS OS 11.11 and later) gives access as an ACAP application's user, with release-specific steps. See the [Axis documentation](https://developer.axis.com/acap/get-started/set-up-developer-environment/set-up-device-advanced/) |
+| Readable `/proc`                    | The account must be able to read the files in the [read-only allowlist](docs/05-collecting-on-axis.md#3-what-is-read). Missing or denied files are reported, not worked around (for example, cross-account `/proc/PID` entries may be unreadable; use the in-app probe then)                                                                               |
+| A device you are allowed to measure | An approved development camera, with a consent or incident reference recorded in the manifest (`--consent-reference`). Do not use production cameras for experiments                                                                                                                                                                                       |
+| Device facts                        | Camera model, SoC, AXIS OS version, application build and ACAP SDK generation, entered by you (`--camera-model`, `--soc`, `--firmware-version`, ...); the tool does not guess them                                                                                                                                                                         |
+| Local disk                          | Space for the run archive (`records.jsonl` grows with duration; `--compress` and `purge` help). Runs are stored locally only                                                                                                                                                                                                                               |
+| A pseudonym policy                  | `--device-id` must be a label you chose; serial numbers, MAC and IP addresses are refused                                                                                                                                                                                                                                                                  |
 
 **Allocation sampling and symbolization (`symbolize`, optional `AXMEM_SAMPLER`)**
 
-| Requirement | Detail |
-| --- | --- |
-| Nothing extra to read a sample file | `axis-memlab symbolize` is plain Python; it resolves ELF function names with its own reader |
-| Unstripped binaries off the camera | Build the profiled application with `-g -fno-omit-frame-pointer` and `-Wl,--build-id`; keep the unstripped binaries and libraries (or separated debug files) on the workstation. Symbols are matched to the device's modules by the build-id inside the file, never by name |
-| Optional: `llvm-symbolizer` or `addr2line` (binutils) | Adds source file and line and inlined frames; used only if found on `PATH` |
-| Optional: `c++filt` (binutils) | Demangles C++ names; without it names stay mangled and the report says so |
-| Development build only | The sampler replaces the global `operator new`; link `axis_memlab_new_hook` into the executable of a development build, never a production one |
-| Linux target for stacks and ELF symbols | Frame-pointer unwinding (x86-64, AArch64) and the ELF module table are Linux code paths; on other targets stacks are shallow or unresolved. PE (Windows) binaries are not symbolized |
-| Optional workstation replay tools | AddressSanitizer/LeakSanitizer (GCC or Clang), `heaptrack`, Valgrind (Massif, DHAT), for replaying a workload off the camera (`docs/12-allocation-sampling.md`, section 6); none is used by the repository itself |
+| Requirement                                           | Detail                                                                                                                                                                                                                                                                      |
+|-------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Nothing extra to read a sample file                   | `axis-memlab symbolize` is plain Python; it resolves ELF function names with its own reader                                                                                                                                                                                 |
+| Unstripped binaries off the camera                    | Build the profiled application with `-g -fno-omit-frame-pointer` and `-Wl,--build-id`; keep the unstripped binaries and libraries (or separated debug files) on the workstation. Symbols are matched to the device's modules by the build-id inside the file, never by name |
+| Optional: `llvm-symbolizer` or `addr2line` (binutils) | Adds source file and line and inlined frames; used only if found on `PATH`                                                                                                                                                                                                  |
+| Optional: `c++filt` (binutils)                        | Demangles C++ names; without it names stay mangled and the report says so                                                                                                                                                                                                   |
+| Development build only                                | The sampler replaces the global `operator new`; link `axis_memlab_new_hook` into the executable of a development build, never a production one                                                                                                                              |
+| Linux target for stacks and ELF symbols               | Frame-pointer unwinding (x86-64, AArch64) and the ELF module table are Linux code paths; on other targets stacks are shallow or unresolved. PE (Windows) binaries are not symbolized                                                                                        |
+| Optional workstation replay tools                     | AddressSanitizer/LeakSanitizer (GCC or Clang), `heaptrack`, Valgrind (Massif, DHAT), for replaying a workload off the camera (`docs/12-allocation-sampling.md`, section 6); none is used by the repository itself                                                           |
 
 **Advanced diagnostics, DDH import, and evidence bundles (`advanced`, `bundle`)**
 
-| Requirement | Detail |
-| --- | --- |
-| Nothing extra for the tools | The gate, evidence record, DDH importer, platform rules, and bundle builder are plain Python. They never run a diagnostic on a device |
-| To *use* a diagnostic | A **declared lab unit**, the owner's written approval, and the diagnostic's own tool on the device (`strace`, `gdbserver`, `perf`, ...), none of which this repository provides or installs. Many may be unavailable to restricted AXIS OS 12 accounts; each one is a per-firmware evidence entry |
-| Developer Mode | Enabled manually, as Axis documents for your release, for `gdbserver`; the tools never toggle it |
-| Vendor-approved lab image | For `perf`, `ftrace`, and eBPF, which the vendor may not permit on production firmware |
-| DDH client | A way to capture Device Data Hub messages (an ACAP application or a supported API), plus a mapping file you write from a captured message |
-| Axis server report | Exported by an authorized operator from the device; passed to `bundle` as a text file |
-| An approved channel for bundles | Contact, transfer, and retention procedures are owner-supplied; none is defined here |
+| Requirement                     | Detail                                                                                                                                                                                                                                                                                            |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Nothing extra for the tools     | The gate, evidence record, DDH importer, platform rules, and bundle builder are plain Python. They never run a diagnostic on a device                                                                                                                                                             |
+| To *use* a diagnostic           | A **declared lab unit**, the owner's written approval, and the diagnostic's own tool on the device (`strace`, `gdbserver`, `perf`, ...), none of which this repository provides or installs. Many may be unavailable to restricted AXIS OS 12 accounts; each one is a per-firmware evidence entry |
+| Developer Mode                  | Enabled manually, as Axis documents for your release, for `gdbserver`; the tools never toggle it                                                                                                                                                                                                  |
+| Vendor-approved lab image       | For `perf`, `ftrace`, and eBPF, which the vendor may not permit on production firmware                                                                                                                                                                                                            |
+| DDH client                      | A way to capture Device Data Hub messages (an ACAP application or a supported API), plus a mapping file you write from a captured message                                                                                                                                                         |
+| Axis server report              | Exported by an authorized operator from the device; passed to `bundle` as a text file                                                                                                                                                                                                             |
+| An approved channel for bundles | Contact, transfer, and retention procedures are owner-supplied; none is defined here                                                                                                                                                                                                              |
 
 **Virtual CCTV board on an Orange Pi 5 (`docs/device-optional/`)**
 
-| Requirement | Detail |
-| --- | --- |
-| Orange Pi 5 | Any RAM size (8 GB or more is comfortable for the VM tier), power, cooling, storage, and a Debian/Ubuntu-family aarch64 image with `systemd` and cgroup v2 (memory controller) |
+| Requirement  | Detail                                                                                                                                                                                       |
+|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Orange Pi 5  | Any RAM size (8 GB or more is comfortable for the VM tier), power, cooling, storage, and a Debian/Ubuntu-family aarch64 image with `systemd` and cgroup v2 (memory controller)               |
 | On the board | `build-essential`, CMake 3.20 or newer, a C++17 compiler, Python 3.11 or newer, `git`, OpenSSH server (the provisioning script installs what it can; some images ship older CMake or Python) |
-| VM tier only | `qemu-system-arm`, `qemu-utils`, `qemu-efi-aarch64`, `cloud-image-utils`, `curl`; `/dev/kvm` is **not guaranteed** on RK3588 kernels, and software emulation is much slower |
-| Workstation | `axis-memlab`, an OpenSSH client, and a dedicated SSH key for the lab |
-| Not required | A camera. Attaching one, or using a real AXIS camera, is optional or TODO there |
+| VM tier only | `qemu-system-arm`, `qemu-utils`, `qemu-efi-aarch64`, `cloud-image-utils`, `curl`; `/dev/kvm` is **not guaranteed** on RK3588 kernels, and software emulation is much slower                  |
+| Workstation  | `axis-memlab`, an OpenSSH client, and a dedicated SSH key for the lab                                                                                                                        |
+| Not required | A camera. Attaching one, or using a real AXIS camera, is optional or TODO there                                                                                                              |
 
 **In-application probe (`native/`)**
 
-| Requirement | Detail |
-| --- | --- |
-| CMake | 3.20 or newer |
-| C++17 compiler | GCC, Clang, or MSVC (developed with Visual Studio 2022; CI builds GCC and Clang on Linux) |
-| Threads library | `pthread` on Linux (found by CMake) |
-| Your application's build | The probe is SDK-free. To run inside an ACAP application you build it with your own toolchain and the Axis ACAP Native SDK; this repository neither includes nor requires the SDK |
-| Linux target for `/proc` metrics | On other platforms the probe still works, and process-memory metrics are reported as unavailable |
+| Requirement                      | Detail                                                                                                                                                                            |
+|----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CMake                            | 3.20 or newer                                                                                                                                                                     |
+| C++17 compiler                   | GCC, Clang, or MSVC (developed with Visual Studio 2022; CI builds GCC and Clang on Linux)                                                                                         |
+| Threads library                  | `pthread` on Linux (found by CMake)                                                                                                                                               |
+| Your application's build         | The probe is SDK-free. To run inside an ACAP application you build it with your own toolchain and the Axis ACAP Native SDK; this repository neither includes nor requires the SDK |
+| Linux target for `/proc` metrics | On other platforms the probe still works, and process-memory metrics are reported as unavailable                                                                                  |
 
 **Not required today:** root access, the Axis SDK, cloud services, any network access other
 than SSH to the device, or any online symbol lookup. Later milestones will add optional
@@ -247,7 +232,7 @@ not add real credentials, customer identifiers, footage, or device measurements 
 fixtures or issues. The defaults disable root access, mutations, deep snapshots, ptrace,
 image/plate capture, and camera-flash writes.
 
-## Documentation
+## Documentation Links
 
 - [Compatibility matrix template](docs/01-axis-compatibility.md)
 - [Protocol and schemas](docs/02-protocol-and-schema.md)
@@ -260,4 +245,3 @@ image/plate capture, and camera-flash writes.
 - [Overhead measurement](docs/10-benchmarking-overhead.md)
 - [Investigation workflow](docs/11-investigation-workflow.md)
 - [Security and privacy](docs/08-security-privacy.md)
-- [Contribution guide](CONTRIBUTING.md) and [security policy](SECURITY.md)
