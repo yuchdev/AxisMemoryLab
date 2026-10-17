@@ -72,7 +72,9 @@ def classify_segment(run_id: str, segment: Segment, trends: Trends) -> list[dict
     names = sorted(trends)
     queues = [m for m in names if m.startswith("app.") and "queue" in m]
     inflight = [m for m in names if m.startswith("app.") and ("in_flight" in m or "inflight" in m)]
-    live = [m for m in names if m.startswith("app.") and "live_bytes" in m]
+    live = [
+        m for m in names if m.startswith("app.") and ("live_bytes" in m or "in_flight_bytes" in m)
+    ]
     growing_process = _rising(trends, list(PROCESS_METRICS))
     findings: list[dict[str, Any]] = []
 

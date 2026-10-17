@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Status: milestone 0000 scaffold
+## Status: scaffold plus milestones 0002 and 0003 (0001 not implemented)
 
-This repo is a deliberately inert scaffold for future AXIS OS memory diagnostics. No collection, discovery, symbolization, or device I/O exists yet; offline analysis and reporting (M0002) do. Modules under `src/axis_memlab/{collection,sources,symbolization,transport}` are empty placeholders for milestones 0001–0005 (see `milestones/`). `cli.py`, `config.py`, `records.py`, `errors.py`, and (milestone 0002) `analysis/` and `reporting/` contain behavior; `collection/`, `sources/`, and `transport/` (M0001) are still empty.
+This repo is a deliberately inert scaffold for future AXIS OS memory diagnostics. No host collection, discovery, symbolization, or device I/O exists yet; offline analysis and reporting (M0002) and the in-app probe (M0003, file output only) do. `docs/roadmap/tech-notes-coverage.md` maps every item of the tech notes to its owner. Modules under `src/axis_memlab/{collection,sources,symbolization,transport}` are empty placeholders for milestones 0001–0005 (see `docs/roadmap/`). `cli.py`, `config.py`, `records.py`, `errors.py`, and (milestone 0002) `analysis/` and `reporting/` contain behavior; `collection/`, `sources/`, and `transport/` (M0001) are still empty.
 
-**Do not implement future-milestone behavior as a successful placeholder.** Unimplemented features must fail loudly (e.g. planned CLI commands exit 3; native CMake rejects anything but `AXMEM_DISABLED=ON`). Tests, fixtures, and examples must stay synthetic and offline — no real credentials, customer/camera identifiers, footage, or device measurements.
+**Do not implement future-milestone behavior as a successful placeholder.** Unimplemented features must fail loudly (e.g. planned CLI commands exit 3; native CMake rejects zero or multiple modes and `AXMEM_SAMPLER`). Tests, fixtures, and examples must stay synthetic and offline — no real credentials, customer/camera identifiers, footage, or device measurements.
 
 ## Commands
 
@@ -17,19 +17,19 @@ pytest tests/unit/test_config.py::test_name # single test
 ruff check . && ruff format --check .       # line length 100
 mypy src                                    # strict mode
 python -m build
-cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug -DAXMEM_DISABLED=ON
-cmake --build build/native --parallel && ctest --test-dir build/native --output-on-failure
+cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug -DAXMEM_LEDGER=ON   # or AXMEM_DISABLED / AXMEM_COUNTERS
+cmake --build build/native --parallel && ctest --test-dir build/native --output-on-failure   # VS generators: add --config Debug / -C Debug
 python -m jsonschema --instance tests/fixtures/runs/sample-run/manifest.json schemas/run-manifest-v1.schema.json
 ```
 
-CI (`.github/workflows/`) runs the Python checks on 3.11 and 3.13, the native build with gcc and clang, and a schema/config subset of tests (`test_records.py`, `test_config.py`).
+CI (`.github/workflows/`) runs the Python checks on 3.11 and 3.13, the native build with gcc and clang, and a schema/config subset of tests (`test_records.py`, `test_config.py`). `tests/integration/test_native_probe.py` (marker `native`) builds the ledger mode with CMake and is skipped when CMake or a C++ compiler is missing.
 
 ## Architecture
 
 Three independent surfaces that meet only through shared contracts:
 
 - **`src/axis_memlab/`** — host-side Python CLI (`axis-memlab`, entry `cli:main`). `cli.build_parser()` builds the command tree without I/O. `config check`, `analyze`, `compare`, and `report` work; commands in `_PLANNED` map to their owning milestone and return exit code 3. Exit codes: 0 ok, 2 invalid config/arguments, 3 planned/not implemented, 4 unreadable or invalid file (including a corrupt run or report).
-- **`native/`** — SDK-free C ABI (`probe.h`) plus C++17 RAII wrapper (`probe.hpp`, `counters.hpp`, `ledger.hpp`), compiled only in disabled mode. The CMake `reject_unimplemented_counters` test is `WILL_FAIL` by design — it asserts that `AXMEM_COUNTERS` etc. are refused.
+- **`native/`** — SDK-free C ABI (`probe.h`, ABI v2) plus C++17 wrappers (`probe.hpp`, `counters.hpp`, `ledger.hpp`). Exactly one of `AXMEM_DISABLED` / `AXMEM_COUNTERS` / `AXMEM_LEDGER` must be set; none, several, or `AXMEM_SAMPLER` (M0004) is refused at configure time by the `WILL_FAIL` `reject_*` tests. Enabled modes write `record-v1` JSON Lines from caller-driven snapshots (no threads, no network). Details in `docs/06` and `docs/decisions/0001-tech-notes-reconciliation.md`.
 - **`schemas/`** — provisional JSON Schema Draft 2020-12 wire formats (`record-v1`, `report-v1`, `run-manifest-v1`). `records.py` is the Python mirror of `record-v1`; keep the two in sync. M0001 owns protocol refinement; no stability is promised.
 
 ### Config safety model (`config.py`)

@@ -1,4 +1,4 @@
-name: Native disabled API
+name: Native probe
 
 on:
   push:
@@ -11,21 +11,21 @@ permissions:
 jobs:
   native:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         compiler: [gcc, clang]
+        mode: [DISABLED, COUNTERS, LEDGER]
     steps:
       - uses: actions/checkout@v4
-      - name: Configure GCC
-        if: matrix.compiler == 'gcc'
-        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug -DAXMEM_DISABLED=ON
-      - name: Configure Clang
-        if: matrix.compiler == 'clang'
-        env:
-          CC: clang
-          CXX: clang++
-        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug -DAXMEM_DISABLED=ON
+      - name: Select compiler
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            echo "CC=clang" >> "$GITHUB_ENV"
+            echo "CXX=clang++" >> "$GITHUB_ENV"
+          fi
+      - name: Configure
+        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Debug -DAXMEM_${{ matrix.mode }}=ON
       - run: cmake --build build/native --parallel
       - run: ctest --test-dir build/native --output-on-failure

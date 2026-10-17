@@ -1,4 +1,4 @@
-# Queue metrics integration (planned)
+# Queue metrics integration (pattern)
 
-Queue counters are an M0003 design topic. No queue data or camera-specific
-implementation is included in this scaffold.
+See `../queue_metrics.cpp`: a bounded queue that publishes depth, bytes, high-watermark,
+and drops at its own push/pop boundaries. Application-agnostic; no camera-specific code.

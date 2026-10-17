@@ -23,3 +23,12 @@ record with `annotations` `{"event":"phase_start","phase":"T2"}` opens a named p
 
 Fixtures in this repository are synthetic. Schema version 1 is preliminary and
 does not imply deployed protocol stability.
+
+## Records written by the in-app probe (M0003)
+
+The C++ probe emits `record-v1` lines with `producer` `axmem-probe`: `sample` records
+(`metrics`, plus `annotations.ledger` in LEDGER mode) and `event` records for phase
+markers (`annotations` `{"event":"phase_start","phase":"..."}`). Identity carries
+`device_id`, `pid`, `process_start_ticks`, and `boot_id` when readable. Absent or
+unreadable values are `{available:false, reason}`, never zero. See
+`docs/06-integrating-cpp-probes.md` for the metric names.

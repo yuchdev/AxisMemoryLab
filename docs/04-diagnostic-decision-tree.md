@@ -38,7 +38,7 @@ the next controlled comparison.
 | --- | --- | --- |
 | `H-RETENTION` | PSS or anonymous RSS rising and an `app.*queue*` metric rising | Cause of the queue growth |
 | `H-MISSED-RELEASE` | PSS or anonymous RSS rising and an `app.*in_flight*` metric rising | That a release call is missing |
-| `H-ALLOCATOR` | Anonymous RSS rising while `app.*live_bytes*` metrics are flat | Fragmentation vs untracked allocation |
+| `H-ALLOCATOR` | Anonymous RSS rising while `app.*live_bytes*` or ledger `app.resource.*.in_flight_bytes` metrics are flat | Fragmentation vs untracked allocation |
 | `H-UNATTRIBUTED` | Process growth and none of the above | Anything about cause |
 | `H-NOT-IN-PROCESS` | `MemAvailable` falling, PSS flat | A kernel leak |
 | `H-PLATEAU` | Rising during warm-up, flat after | That the bound holds longer |
