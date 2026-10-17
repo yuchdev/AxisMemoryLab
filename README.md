@@ -1,16 +1,16 @@
 # Axis Memory Lab
 
-**Nothing in this repository has been run against a real AXIS camera.** Host
+Axis Memory Lab is intended to help investigate memory behavior in applications
+running under AXIS OS. It has two deliberately separate surfaces: an optional,
+low-impact native probe in an application, and a host-side Python CLI for safe
+collection and offline analysis. Neither hasn't been run on a camera yet.
+
+> Nothing in this repository has been run against a real AXIS camera. Host
 collection (milestone 0001), offline analysis (0002), an in-application probe (0003),
 allocation sampling (0004), and an evidence-gated advanced-diagnostics toolkit (0005)
 are implemented and tested on synthetic data and fixtures only. Running them
 against a device needs the external requirements listed below and an explicitly
 authorized device. No Axis SDK, root account, or surveillance material is needed.
-
-Axis Memory Lab is intended to help investigate memory behavior in applications
-running under AXIS OS. It has two deliberately separate surfaces: an optional,
-low-impact native probe in an application, and a host-side Python CLI for safe
-collection and offline analysis. Neither hasn't been run on a camera yet.
 
 ## Install and try
 
@@ -18,7 +18,7 @@ Python 3.11+ is required. From the repository root:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate              # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 python -m pip install -e '.[dev]'
 axis-memlab --help
 axis-memlab --version
@@ -48,7 +48,7 @@ installed or configured by the package itself.
 |------------------|------------------------------------------------------------------------------------------------|
 | Python           | 3.11 or newer; no runtime dependencies (standard library only)                                 |
 | `pip`            | To install the package; development extras add `build`, `jsonschema`, `mypy`, `pytest`, `ruff` |
-| Operating system | Windows, macOS, or Linux for the host tools                                                    |
+| Operating system | macOS or Linux for the host tools                                                    |
 
 **Reading a real device over SSH (`discover`, `collect`, `snapshot`)**
 
@@ -240,7 +240,8 @@ image/plate capture, and camera-flash writes.
 - [Collecting on AXIS (runbook)](docs/05-collecting-on-axis.md)
 - [Native probe integration](docs/06-integrating-cpp-probes.md)
 - [Allocation sampling and symbolization](docs/12-allocation-sampling.md)
-- [Advanced diagnostics](docs/13-advanced-diagnostics.md) and [evidence bundles](docs/09-customer-escalation.md)
+- [Advanced diagnostics](docs/13-advanced-diagnostics.md)
+- [evidence bundles](docs/09-customer-escalation.md)
 - [Virtual CCTV board on an Orange Pi 5](docs/device-optional/README.md)
 - [Overhead measurement](docs/10-benchmarking-overhead.md)
 - [Investigation workflow](docs/11-investigation-workflow.md)
