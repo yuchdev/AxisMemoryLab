@@ -2,7 +2,7 @@ name: Native probe
 
 on:
   push:
-    branches: [main, master]
+    branches: [master]
   pull_request:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   native:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
